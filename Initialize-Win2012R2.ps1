@@ -3,6 +3,9 @@
     Configures Windows Server 2012 R2 to standard.
 .DESCRIPTION
     Use this script to configure any physical or virtual machine that is running Windows Server 2012 R2.
+
+    Call with iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
+
 .PARAMETER Name
     The name of the virtual machine
 .EXAMPLE
@@ -21,10 +24,9 @@ Function Install-NETFramework461
 {
     Write-Host "Installing .NET Framework 4.6.1..."
     $url = 'https://download.microsoft.com/download/E/4/1/E4173890-A24A-4936-9FC9-AF930FE3FA40/NDP461-KB3102436-x86-x64-AllOS-ENU.exe'
-    $exe = "$env:temp\NDP461-KB3102436-x86-x64-AllOS-ENU.exe"
-    $prm = "/q /norestart"
+    $exe = "$env:windir\temp\NDP461-KB3102436-x86-x64-AllOS-ENU.exe"
     Invoke-WebRequest $url -OutFile $exe
-    & $exe $prm | Out-Host
+    & $exe /q /norestart | Out-Host
     Remove-Item $exe
 }
 
@@ -32,10 +34,9 @@ Function Install-WMF5
 {
     Write-Host "Installing Windows Management Framework 5.0..."
     $url = 'https://download.microsoft.com/download/2/C/6/2C6E1B4A-EBE5-48A6-B225-2D2058A9CEFB/Win8.1AndW2K12R2-KB3134758-x64.msu'
-    $msu = "$env:temp\Win8.1AndW2K12R2-KB3134758-x64.msu"
-    $prm = "$msu /quiet /forcerestart"
+    $msu = "$env:windir\temp\Win8.1AndW2K12R2-KB3134758-x64.msu"
     Invoke-WebRequest $url -OutFile $msu
-    & "wusa.exe" $prm | Out-Host
+    & wusa.exe $msu /quiet /forcerestart | Out-Host
     Remove-Item $msu
 }
 
