@@ -46,6 +46,18 @@ param(
     [switch] $SkipDefrag
 )
 
+function Create-AutoUnattendISO {
+    param (
+        [string] $Path
+    )
+    $url = "http://download.wsusoffline.net/mkisofs.exe"
+    $exe = "$env:temp\mkisofs.exe"
+    $xml = "$env:temp\autounattend.xml"
+    $prm = "-J -R -cache-inodes -o $Path $xml"
+    Invoke-WebRequest $url -OutFile $exe
+    & $exe $prm | Out-Host
+}
+
 
 if (!$SkipDefrag) {
     Write-Host "Please wait while defrag completes..."
@@ -72,7 +84,10 @@ $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrat
 #
 # attach unattended setup ISO
 #
-$vm | Add-VMDvdDrive -ControllerNumber 1 -Path .\autounattend.iso
+Write-Host "Generating unattended setup file..."
+$iso = "$env:temp\autounattend.iso"
+Create-AutoUnattendISO -Path $iso
+$vm | Add-VMDvdDrive -ControllerNumber 1 -Path $iso
 
 #
 # start
