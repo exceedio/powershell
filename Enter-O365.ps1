@@ -30,7 +30,7 @@ $UserCredential = Get-Credential -UserName $UserName -Message 'Enter global admi
 
 #
 # connect to msonline
-# 
+#
 Connect-MsolService -Credential $UserCredential
 
 #
@@ -38,5 +38,5 @@ Connect-MsolService -Credential $UserCredential
 #
 if ($Exchange) {
     $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $UserCredential -Authentication Basic -AllowRedirection
-    Import-PSSession $Session
+    Import-PSSession $Session -DisableNameChecking
 }
