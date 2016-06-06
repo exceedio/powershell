@@ -3,8 +3,10 @@
     Configures Windows Server 2012 R2 to standard.
 .DESCRIPTION
     Use this script to configure any physical or virtual machine that is running Windows Server 2012 R2.
+    
+    Call from elevated PowerShell prompt using:
 
-    Call with iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
 
 .PARAMETER Name
     The name of the virtual machine
