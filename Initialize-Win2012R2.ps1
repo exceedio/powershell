@@ -14,14 +14,6 @@
     .\Initialize-Win2012R2.ps1 -Name VM1234 -Purpose 'Domain Controller'
 #>
 
-param(
-    [Parameter(Mandatory=$true)]
-    [string] $Name,
-
-    [Parameter(Mandatory=$true)]
-    [string] $Purpose
-)
-
 Function Install-NETFramework461
 {
     Write-Host "Installing .NET Framework 4.6.1..."
