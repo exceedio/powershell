@@ -51,7 +51,10 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 #
 # enable remote desktop in firewall rules in case firewall is turned back on
 #
-Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Enabled True
+if (!(Get-NetFirewallRule -DisplayGroup "Remote Desktop").Enabled) {
+    Write-Host "Enabling Remote Desktop firewall rule..."
+    Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Enabled True
+}
 
 #
 # enable remote desktop
@@ -62,35 +65,37 @@ Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Enabled True
 #
 # disable firewall
 #
-netsh advfirewall set allprofiles state off
+Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False
 
 #
 # disable privacy IPv6 addresses
 #
-netsh interface ipv6 set privacy state=disabled store=active
-netsh interface ipv6 set privacy state=disabled store=persistent
-netsh interface ipv6 set global randomizeidentifiers=disabled store=active
-netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent
+Write-Host "Disabling privacy IPv6 addresses..."
+netsh interface ipv6 set privacy state=disabled store=active | Out-Null
+netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
+netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
+netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent | Out-Null
 
 #
 # disable task offloading
 #
-Set-NetOffloadGlobalSetting -TaskOffload Disabled
+if ((Get-NetOffloadGlobalSetting).TaskOffload -eq 'Enabled') {
+    Write-Host "Disabling global task offload..."
+    Set-NetOffloadGlobalSetting -TaskOffload Disabled
+}
 
 #
 # enable smartscreen
 #
-Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name SmartScreenEnabled -Value 'RequireAdmin' -Force
+if ((Get-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer).SmartScreenEnabled -ne 'RequireAdmin') {
+    Write-Host "Enabling SmartScreen..."
+    Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name SmartScreenEnabled -Value 'RequireAdmin' -Force
+}
 
 #
 # disable server manager from showing for current user
 #
 New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
-
-#
-# all users
-#
-reg add "HKU\.DEFAULT\Software\Microsoft\ServerManager" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f
 
 #
 # disable printer direction on the server side to keep event log clean
@@ -124,4 +129,5 @@ if (@(Get-WUServiceManager | ? {$_.ServiceID -eq '7971f918-a847-4430-9279-4a52d1
 #
 # install updates
 #
+Write-Host "Installing updates and automatically rebooting if needed..."
 Get-WUInstall -Criteria "IsInstalled = 0 AND BrowseOnly = 0 AND Type = 'Software'" -AutoReboot -AcceptAll
