@@ -73,6 +73,11 @@ netsh interface ipv6 set global randomizeidentifiers=disabled store=active
 netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent
 
 #
+# disable task offloading
+#
+Set-NetOffloadGlobalSetting -TaskOffload Disabled
+
+#
 # enable smartscreen
 #
 Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name SmartScreenEnabled -Value 'RequireAdmin' -Force
@@ -95,17 +100,26 @@ New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\Terminal Se
 #
 # enable nuget
 #
-Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+if (@(Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue).Count -eq 0) {
+    Write-Host "Enabling Nuget..."
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+}
 
 #
 # install modules
 #
-Install-Module PSWindowsUpdate -Force
+if (@(Get-Module -ListAvailable -Name PSWindowsUpdate -ErrorAction SilentlyContinue).Count -eq 0) {
+    Write-Host "Installing Windows Update PowerShell module..."
+    Install-Module PSWindowsUpdate -Force
+}
 
 #
 # enable Microsoft Update
 #
-Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
+if (@(Get-WUServiceManager | ? {$_.ServiceID -eq '7971f918-a847-4430-9279-4a52d1efe18d'}).Count -eq 0) {
+    Write-Host "Enabling Microsoft Update..."
+    Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
+}
 
 #
 # install updates
