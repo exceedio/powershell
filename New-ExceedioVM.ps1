@@ -43,7 +43,10 @@ param(
     [switch] $Start,
 
     [Parameter()]
-    [switch] $SkipDefrag
+    [switch] $SkipDefrag,
+
+    [Parameter()]
+    [switch] $Unattended
 )
 
 function Create-AutoUnattendISO {
@@ -81,13 +84,12 @@ $vm | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $VirtualSwitch
 $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
 $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrationService
 
-#
-# attach unattended setup ISO
-#
-Write-Host "Generating unattended setup file..."
-$iso = "$env:temp\autounattend.iso"
-Create-AutoUnattendISO -Path $iso
-$vm | Add-VMDvdDrive -ControllerNumber 1 -Path $iso
+if ($Unattended) {
+    Write-Host "Generating unattended setup file..."
+    $iso = "$env:temp\autounattend.iso"
+    Create-AutoUnattendISO -Path $iso
+    $vm | Add-VMDvdDrive -ControllerNumber 1 -Path $iso
+}
 
 #
 # start
@@ -101,5 +103,7 @@ Write-Host "Continue script AFTER Windows has completed installing..."
 pause
 $vm | Stop-VM -Force
 $vm | Get-VMDvdDrive -ControllerNumber 1 -ControllerLocation 0 | Set-VMDvdDrive -Path $null
-$vm | Get-VMDvdDrive -ControllerNumber 1 -ControllerLocation 1 | Remove-VMDvdDrive
+if ($Unattended) {
+    $vm | Get-VMDvdDrive -ControllerNumber 1 -ControllerLocation 1 | Remove-VMDvdDrive
+}
 $vm | Start-VM
