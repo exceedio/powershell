@@ -7,50 +7,7 @@
     The name of the virtual machine
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/New-ExceedioVM.ps1 -UseBasicParsing | iex
-.EXAMPLE
-    .\New-ExceedioVM.ps1 -Name VM9560 -Purpose 'Azure AD Connect' -Start
-.EXAMPLE
-    .\New-ExceedioVM.ps1 -Name VM9560 -Purpose 'Linux Machine' -Memory 24GB -InstallMedia 'ubuntu-server.iso'
 #>
-
-param(
-
-    [Parameter()]
-    [string] $Name,
-
-    [Parameter()]
-    [string] $Purpose,
-
-    [Parameter()]
-    [string] $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
-
-    [Parameter()]
-    [string] $InstallMedia = 'SW_DVD9_Windows_Svr_Std_and_DataCtr_2012_R2_64Bit_English_-4_MLF_X19-82891.ISO',
-
-    [Parameter()]
-    [string] $InstallMediaPath = 'C:\Users\Public\Documents\ISO',
-
-    [Parameter()]
-    [long] $Memory = 8GB,
-
-    [Parameter()]
-    [int] $ProcessorCount = 2,
-
-    [Parameter()]
-    [string] $VirtualSwitchName = 'External Virtual Switch',
-
-    [Parameter()]
-    [int] $StartDelayInSeconds = 120,
-
-    [Parameter()]
-    [switch] $Start,
-
-    [Parameter()]
-    [switch] $SkipDefrag,
-
-    [Parameter()]
-    [switch] $Unattended
-)
 
 function Create-AutoUnattendISO {
     param (
@@ -63,6 +20,19 @@ function Create-AutoUnattendISO {
     Invoke-WebRequest $url -OutFile $exe
     & $exe $prm | Out-Host
 }
+
+$Name                = $null
+$Purpose             = $null
+$VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
+$InstallMedia        = 'SW_DVD9_Windows_Svr_Std_and_DataCtr_2012_R2_64Bit_English_-4_MLF_X19-82891.ISO',
+$InstallMediaPath    = 'C:\Users\Public\Documents\ISO',
+$Memory              = 8GB,
+$ProcessorCount      = 2,
+$VirtualSwitchName   = 'External Virtual Switch',
+$StartDelayInSeconds = 120,
+$Start               = $false
+$SkipDefrag          = $false
+$Unattended          = $false
 
 if (!$Name) {
     $Name = Read-Host "Name of virtual machine (e.g. VMnnnn)?"
