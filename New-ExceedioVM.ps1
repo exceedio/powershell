@@ -34,6 +34,10 @@ $Start               = $false
 $SkipDefrag          = $false
 $Unattended          = $false
 
+#
+# gather input
+#
+
 if (!$Name) {
     $Name = Read-Host "Name of virtual machine (e.g. VMnnnn)?"
 }
