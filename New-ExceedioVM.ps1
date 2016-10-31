@@ -6,7 +6,7 @@
 .PARAMETER Name
     The name of the virtual machine
 .EXAMPLE
-    iwr https://github.com/exceedio/powershell/raw/master/New-ExceedioVM.ps1 -UseBasicParsing | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/New-ExceedioVM.ps1 -UseBasicParsing | iex
 .EXAMPLE
     .\New-ExceedioVM.ps1 -Name VM9560 -Purpose 'Azure AD Connect' -Start
 .EXAMPLE
