@@ -6,16 +6,18 @@
 .PARAMETER Name
     The name of the virtual machine
 .EXAMPLE
+    iwr https://github.com/exceedio/powershell/raw/master/New-ExceedioVM.ps1 | iex
+.EXAMPLE
     .\New-ExceedioVM.ps1 -Name VM9560 -Purpose 'Azure AD Connect' -Start
 .EXAMPLE
     .\New-ExceedioVM.ps1 -Name VM9560 -Purpose 'Linux Machine' -Memory 24GB -InstallMedia 'ubuntu-server.iso'
 #>
 
 param(
-    [Parameter(Mandatory=$true)]
+    [Parameter()]
     [string] $Name,
 
-    [Parameter(Mandatory=$true)]
+    [Parameter()]
     [string] $Purpose,
 
     [Parameter()]
@@ -61,6 +63,13 @@ function Create-AutoUnattendISO {
     & $exe $prm | Out-Host
 }
 
+if (!$Name) {
+    $Name = Read-Host "Name of virtual machine (e.g. VMnnnn)?"
+}
+
+if (!$Purpose) {
+    $Purpose = Read-Host "Purpose of virtual machine (e.g. Azure AD Connect)?"
+}
 
 if (!$SkipDefrag) {
     Write-Host "Please wait while defrag completes..."
