@@ -23,13 +23,13 @@ function Create-AutoUnattendISO {
 
 $Name                = $null
 $Purpose             = $null
-$VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
-$InstallMedia        = 'SW_DVD9_Windows_Svr_Std_and_DataCtr_2012_R2_64Bit_English_-4_MLF_X19-82891.ISO',
-$InstallMediaPath    = 'C:\Users\Public\Documents\ISO',
-$Memory              = 8GB,
-$ProcessorCount      = 2,
-$VirtualSwitchName   = 'External Virtual Switch',
-$StartDelayInSeconds = 120,
+$VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks'
+$InstallMedia        = 'SW_DVD9_Windows_Svr_Std_and_DataCtr_2012_R2_64Bit_English_-4_MLF_X19-82891.ISO'
+$InstallMediaPath    = 'C:\Users\Public\Documents\ISO'
+$Memory              = 8GB
+$ProcessorCount      = 2
+$VirtualSwitchName   = 'External Virtual Switch'
+$StartDelayInSeconds = 120
 $Start               = $false
 $SkipDefrag          = $false
 $Unattended          = $false
