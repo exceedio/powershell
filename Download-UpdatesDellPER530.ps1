@@ -5,7 +5,7 @@
     Downloads updates (BIOS, network, storage, etc.) for a Dell PowerEdge R530 server
     to the current folder.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Download-UpdatesDellPER530.ps1 | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Download-UpdatesDellPER530.ps1 -UseBasicParsing | iex
 #>
 
 if (Test-Path BIOS_02H3F_WN64_2.2.5.EXE) {
