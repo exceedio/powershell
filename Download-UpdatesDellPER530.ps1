@@ -8,7 +8,7 @@
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Download-UpdatesDellPER530.ps1 -UseBasicParsing | iex
 #>
 
-$hash = @(
+$files = @(
     @{Title = 'BIOS'; Uri = 'http://downloads.dell.com/FOLDER03919962M/1/BIOS_02H3F_WN64_2.2.5.EXE'},
     @{Title = 'iDRAC Firmware'; Uri = 'http://downloads.dell.com/FOLDER03884128M/1/iDRAC-with-Lifecycle-Controller_Firmware_2091K_WN64_2.40.40.40_A00.EXE'},
     @{Title = 'Broadcom Firmware'; Uri = 'iwr http://downloads.dell.com/FOLDER03658126M/1/Network_Firmware_21DWR_WN64_20.2.17.EXE'},
@@ -18,11 +18,13 @@ $hash = @(
     @{Title = 'OpenManage Server Administrator'; Uri = 'http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe'}
 )
 
-for ($i=0; $i -lt $hash.Length; $i++) {
-    $item = $hash[$i]
+for ($i=0; $i -lt $files.Length; $i++) {
+    $item = $files[$i]
     $title = $item.Title
     $uri = $item.Uri
     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
-    Write-Progress -Activity 'Downloading' -CurrentOperation $title -PercentComplete ($i+1 / $hash.Length)
-    iwr $uri -UseBasicParsing | Out-File $filename
+    if (!(Test-Path $filename)) {
+        Write-Progress -Activity 'Downloading' -Status $title -PercentComplete ($i+1 / $files.Length)
+        iwr $uri -UseBasicParsing | Out-File $filename
+    }
 }
