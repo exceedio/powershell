@@ -27,6 +27,6 @@ for ($i=0; $i -lt $total; $i++) {
     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
     if (!(Test-Path $filename)) {
         Write-Progress -Activity 'Downloading Updates for Dell PowerEdge R530' -Status "Downloading $title ($($i + 1) of $total)..." -PercentComplete (($i / $total) * 100)
-        iwr $uri | Out-File $filename
+        iwr $uri -UseBasicParsing -OutFile $filename
     }
 }
