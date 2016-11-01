@@ -18,13 +18,15 @@ $files = @(
     @{Title = 'OpenManage Server Administrator'; Uri = 'http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe'}
 )
 
-for ($i=0; $i -lt $files.Length; $i++) {
+$total = $files.Length
+
+for ($i=0; $i -lt $total; $i++) {
     $item = $files[$i]
     $title = $item.Title
     $uri = $item.Uri
     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
     if (!(Test-Path $filename)) {
-        Write-Progress -Activity 'Downloading' -Status $title -PercentComplete ($i+1 / $files.Length)
+        Write-Progress -Activity 'Downloading' -Status "Downloaded $i of $total" -CurrentOperation $title -PercentComplete (($i+1 / $total) * 100)
         iwr $uri -UseBasicParsing | Out-File $filename
     }
 }
