@@ -26,7 +26,7 @@ for ($i=0; $i -lt $total; $i++) {
     $uri = $item.Uri
     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
     if (!(Test-Path $filename)) {
-        Write-Progress -Activity 'Downloading' -Status "Downloaded $i of $total" -CurrentOperation $title -PercentComplete (($i+1 / $total) * 100)
+        Write-Progress -Activity 'Downloading Updates for Dell PowerEdge R530' -Status "Downloaded $i of $total" -CurrentOperation $title -PercentComplete (($i / $total) * 100)
         iwr $uri -UseBasicParsing | Out-File $filename
     }
 }
