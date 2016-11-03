@@ -59,8 +59,8 @@ if ((Get-NetOffloadGlobalSetting).TaskOffload -ne 'Disabled') {
 #
 
 $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5 and DriveLetter="E:"'
-if ($cdrom) {
-    Write-Host "SEtting CD-ROM drive letter"
+if (!($cdrom)) {
+    Write-Host "Setting CD-ROM drive letter"
     $cdrom.DriveLetter = 'E:'
     $cdrom.Put() | Out-Null
 } else {
@@ -158,31 +158,24 @@ if (((Get-VMSwitch).Name -notcontains $vmswitchname) -and ($vmswitchnic -ne ''))
 # problems with Broadcom adapters
 #
 
-Write-Host "Disabling VMQ on all network adapters"
-Get-NetAdapter | Set-NetAdapterVmq -Enabled $false
+if (Get-NetAdapterVmq | where Enabled -eq $true) {
+    Write-Host "Disabling VMQ on all network adapters"
+    Get-NetAdapter | Set-NetAdapterVmq -Enabled $false
+} else {
+    Write-Host "VMQ has already been disabled on all network adapters" -ForegroundColor Green
+}
 
 #
 # configure time synchronization
 #
 
-Write-Host "Configuring time synchronization with pool.ntp.org"
-sc.exe config W32Time start= auto | Out-Null
-sc.exe start W32Time | Out-Null
-w32tm.exe /config /manualpeerlist:"0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org" /syncfromflags:manual /update | Out-Null
-
-
-#
-# add a user
-#
-
-$username = Read-Host "Type the username of the local admin"
-if ((Get-LocalUser).Name -notcontains $username) {
-    Write-Host "Creating local administrator"
-    net.exe user $username * /add
-    net.exe localgroup Administrators $username /add | Out-Null
-    wmic.exe useraccount where name=`"$username`" set PasswordExpires=False | Out-Null
+if ((w32tm /query /configuration) -match '0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org') {
+    Write-Host "Configuring time synchronization with pool.ntp.org"
+    sc.exe config W32Time start= auto | Out-Null
+    sc.exe start W32Time | Out-Null
+    w32tm.exe /config /manualpeerlist:"0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org" /syncfromflags:manual /update | Out-Null
 } else {
-    Write-Host "Local administrator already exists" -ForegroundColor Green
+    Write-Host "Time synchronization is already configured for pool.ntp.org" -ForegroundColor Green
 }
 
 #
@@ -207,11 +200,15 @@ if (!(Test-Path 'C:\Program Files\Dell\SysMgt\omsa')) {
 }
 
 #
-# disable Windows Firewall
+# temporarily disable Windows Firewall
 #
 
-Write-Host "Disabling all firewall profiles"
-Get-NetFirewallProfile -All | Where Enabled -eq $true | Set-NetFirewallProfile -Enabled False
+if (Get-NetFirewallProfile -All | Where Enabled -eq $true) {
+    Write-Host "Disabling all firewall profiles"
+    Get-NetFirewallProfile -All | Set-NetFirewallProfile -Enabled False
+} else {
+    Write-Host "All firewall profiles are already disabled" -ForegroundColor Green
+}
 
 #
 # create location for ISO files
@@ -246,7 +243,7 @@ if ($env:computername -ne $newname) {
 $racip = Read-Host "What is the desired iDRAC address (e.g. 192.168.0.201)?"
 $racnm = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
 $racgw = Read-Host "What is the desired iDRAC gateway (e.g. 192.168.0.1)?"
-$racpw = Read-Host "What is the documented iDRAC root password?"
+$racpw = Read-Host "What is the Dell iDRAC ($newname) password?"
 
 Write-Host "Configuring iDRAC address and setting password"
 racadm set iDRAC.IPv4.Address $racip | Out-Null
@@ -255,6 +252,20 @@ racadm set iDRAC.IPv4.Gateway $racgw | Out-Null
 racadm set iDRAC.IPv4.DNS1 8.8.8.8 | Out-Null
 racadm set iDRAC.IPv4.DNS2 8.8.4.4 | Out-Null
 racadm set iDRAC.Users.2.Password $racpw | Out-Null
+
+#
+# add a user
+#
+
+$username = Read-Host "Type the username of the local admin"
+if ((Get-LocalUser).Name -notcontains $username) {
+    Write-Host "Creating local administrator"
+    net.exe user $username * /add
+    net.exe localgroup Administrators $username /add | Out-Null
+    wmic.exe useraccount where name=`"$username`" set PasswordExpires=False | Out-Null
+} else {
+    Write-Host "Local administrator already exists" -ForegroundColor Green
+}
 
 #
 # finish up
