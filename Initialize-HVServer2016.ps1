@@ -75,7 +75,18 @@ if ($nics.Length -eq 4) {
     }
 }
 
+Get-NetAdapter | Set-NetAdapterVmq -Enabled $false
+
 #
 # set computer name based on asset tag
 #
 
+$assettag = (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag
+$newname = "SV$assettag"
+Rename-Computer -NewName $newname
+
+#
+# download Dell-specific stuff
+#
+
+iwr https://raw.githubusercontent.com/exceedio/powershell/master/Download-UpdatesDellPER530.ps1 -UseBasicParsing | iex
