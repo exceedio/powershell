@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Initializes a Dell server running Hyper-V Server 2016
 .DESCRIPTION
