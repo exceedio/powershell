@@ -9,8 +9,6 @@
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2016.ps1 -UseBasicParsing | iex
 #>
 
-$restartneeded = $false
-
 #
 # prevent print drivers from being loaded
 # on this server when we connect to it via
