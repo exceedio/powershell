@@ -169,7 +169,7 @@ if (Get-NetAdapterVmq | where Enabled -eq $true) {
 # configure time synchronization
 #
 
-if ((w32tm /query /configuration) -match '0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org') {
+if ((w32tm /query /configuration) -notmatch '0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org') {
     Write-Host "Configuring time synchronization with pool.ntp.org"
     sc.exe config W32Time start= auto | Out-Null
     sc.exe start W32Time | Out-Null
