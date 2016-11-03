@@ -41,6 +41,13 @@ if ((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Ser
     Write-Host "RDP connections for all clients are already enabled" -ForegroundColor Green
 }
 
+if ((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp').SecurityLayer -ne 0) {
+    Write-Host "Changing RDP security layer from 2 to 0"
+    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'SecurityLayer' -Value 0 -Type DWord -Force
+} else {
+    Write-Host "RDP security layer is already set to 0" -ForegroundColor Green
+}
+
 #
 # disable task offload globally - this is
 # to prevent known problems with Broadcom
