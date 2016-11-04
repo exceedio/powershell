@@ -2,16 +2,26 @@
 .SYNOPSIS
     Configures Windows Server 2012 R2 to standard.
 .DESCRIPTION
-    Use this script to configure any physical or virtual machine that is running Windows Server 2012 R2.
-    
-    Call from elevated PowerShell prompt using:
+    Installs .NET Framework 4.6.1 and WMF 5.0
+    Renames computer according to standard
+    Adds firewall rules for RDP and then disables firewall
+    Enables RDP
+    Disables privacy IPv6 addresses
+    Disables task offload
+    Enables smartscreen
+    Disables server manager for all users
+    Disables RDP printer redirection
+    Installs all current updates
 
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
-
-.PARAMETER Name
-    The name of the virtual machine
+    This script can be run repeatedly until there are no further updates
+    to install. This script will cause the system on which it is running
+    to restart automatically.
 .EXAMPLE
-    .\Initialize-Win2012R2.ps1 -Name VM1234 -Purpose 'Domain Controller'
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
+.NOTES
+    Filename : Initialize-Win2012R2.ps1
+    Author   : jreese@exceedio.com
+    Modified : Nov, 4, 2016
 #>
 
 Function Install-NETFramework461
@@ -40,6 +50,10 @@ Function Update-Progress
     )
 
     Write-Progress -Activity "Initializing Windows Server 2012 R2" -Status $Status -PercentComplete (($Step / 14) * 100)
+}
+
+if ((Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").VirtualMachineName -ne $env:computername) {
+    Rename-Computer (Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").VirtualMachineName -Force
 }
 
 if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 394271) {
@@ -105,6 +119,13 @@ if ((Get-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Expl
 #
 Update-Progress -Status "Disabling server manager for current user" -Step 9
 New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
+
+#
+# disable server manager from showing for all future users
+#
+REG LOAD HKU\DefaultUser $env:systemdrive\Users\Default\NTUSER.DAT
+REG ADD "HKU\DefaultUser\Software\Policies\Microsoft\Windows NT\Terminal Services" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f
+REG UNLOAD HKU\DefaultUser
 
 #
 # disable printer direction on the server side to keep event log clean
