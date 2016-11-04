@@ -42,6 +42,15 @@ Function Install-WMF5
     Remove-Item $msu
 }
 
+Function Install-7Zip
+{
+    $url = 'http://www.7-zip.org/a/7z1604-x64.exe'
+    $msi = "$env:windir\temp\7z1604-x64.exe"
+    Invoke-WebRequest $url -OutFile $msi
+    & msiexec.exe /i $msi /qb /norestart | Out-Host
+    Remove-Item $msi
+}
+
 Function Update-Progress
 {
     param (
@@ -49,7 +58,7 @@ Function Update-Progress
         [int] $Step
     )
 
-    Write-Progress -Activity "Initializing Windows Server 2012 R2" -Status $Status -PercentComplete (($Step / 14) * 100)
+    Write-Progress -Activity "Initializing Windows Server 2012 R2" -Status $Status -PercentComplete (($Step / 15) * 100)
 }
 
 #
@@ -90,30 +99,38 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 }
 
 #
+# install 7-Zip if needed
+#
+if (!(Test-Path 'C:\Program Files\7-Zip')) {
+    Update-Progress -Status "Installing 7-Zip" -Step 4
+    Install-7Zip
+}
+
+#
 # enable remote desktop in firewall rules in case firewall is turned back on
 #
 if (!(Get-NetFirewallRule -DisplayGroup "Remote Desktop").Enabled) {
-    Update-Progress -Status "Enabling Remote Desktop firewall rule" -Step 4
+    Update-Progress -Status "Enabling Remote Desktop firewall rule" -Step 5
     Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Enabled True
 }
 
 #
 # enable remote desktop
 #
-Update-Progress -Status "Enabling Remote Desktop" -Step 5
+Update-Progress -Status "Enabling Remote Desktop" -Step 6
 (Get-WmiObject Win32_TerminalServiceSetting -Namespace root\cimv2\TerminalServices).SetAllowTsConnections(1,1) | Out-Null
 (Get-WmiObject -Class "Win32_TSGeneralSetting" -Namespace root\cimv2\TerminalServices -Filter "TerminalName='RDP-tcp'").SetUserAuthenticationRequired(0) | Out-Null
 
 #
 # disable firewall
 #
-Update-Progress -Status "Disabling Windows Firewall" -Step 6
+Update-Progress -Status "Disabling Windows Firewall" -Step 7
 Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False
 
 #
 # disable privacy IPv6 addresses
 #
-Update-Progress -Status "Disabling privacy IPv6 addresses" -Step 7
+Update-Progress -Status "Disabling privacy IPv6 addresses" -Step 8
 netsh interface ipv6 set privacy state=disabled store=active | Out-Null
 netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
 netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
@@ -123,7 +140,7 @@ netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent |
 # disable task offloading
 #
 if ((Get-NetOffloadGlobalSetting).TaskOffload -eq 'Enabled') {
-    Update-Progress -Status "Disabling global task offload" -Step 8
+    Update-Progress -Status "Disabling global task offload" -Step 9
     Set-NetOffloadGlobalSetting -TaskOffload Disabled
 }
 
@@ -131,21 +148,21 @@ if ((Get-NetOffloadGlobalSetting).TaskOffload -eq 'Enabled') {
 # enable smartscreen
 #
 if ((Get-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer).SmartScreenEnabled -ne 'RequireAdmin') {
-    Update-Progress -Status "Enabling SmartScreen" -Step 9
+    Update-Progress -Status "Enabling SmartScreen" -Step 10
     Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name SmartScreenEnabled -Value 'RequireAdmin' -Force
 }
 
 #
 # disable printer direction on the server side to keep event log clean
 #
-Update-Progress -Status "Disabling printer redirection for remote connections" -Step 10
+Update-Progress -Status "Disabling printer redirection for remote connections" -Step 11
 New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows NT\Terminal Services" -Name fDisableCpm -PropertyType DWORD -Value 1 -Force | Out-Null
 
 #
 # enable nuget
 #
 if (@(Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue).Count -eq 0) {
-    Update-Progress -Status "Enabling NuGet" -Step 11
+    Update-Progress -Status "Enabling NuGet" -Step 12
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 }
 
@@ -153,7 +170,7 @@ if (@(Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue).Count -eq 0
 # install modules
 #
 if (@(Get-Module -ListAvailable -Name PSWindowsUpdate -ErrorAction SilentlyContinue).Count -eq 0) {
-    Update-Progress -Status "Installing Windows Update PowerShell module" -Step 12
+    Update-Progress -Status "Installing Windows Update PowerShell module" -Step 13
     Install-Module PSWindowsUpdate -Force
 }
 
@@ -161,12 +178,12 @@ if (@(Get-Module -ListAvailable -Name PSWindowsUpdate -ErrorAction SilentlyConti
 # enable Microsoft Update
 #
 if (@(Get-WUServiceManager | ? {$_.ServiceID -eq '7971f918-a847-4430-9279-4a52d1efe18d'}).Count -eq 0) {
-    Update-Progress -Status "Enabling Microsoft Update" -Step 13
+    Update-Progress -Status "Enabling Microsoft Update" -Step 14
     Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
 }
 
 #
 # install updates
 #
-Update-Progress -Status "Installing updates and automatically rebooting if needed" -Step 14
+Update-Progress -Status "Installing updates and automatically rebooting if needed" -Step 15
 Get-WUInstall -Criteria "IsInstalled = 0 AND BrowseOnly = 0 AND Type = 'Software'" -AutoReboot -AcceptAll
