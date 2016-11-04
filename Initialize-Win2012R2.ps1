@@ -52,19 +52,40 @@ Function Update-Progress
     Write-Progress -Activity "Initializing Windows Server 2012 R2" -Status $Status -PercentComplete (($Step / 14) * 100)
 }
 
-if ((Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").VirtualMachineName -ne $env:computername) {
-    Rename-Computer (Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").VirtualMachineName -Force
+#
+# rename to standard
+#
+$vmname = (Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").VirtualMachineName
+if ($env:computername -ne $vmname) {
+    Rename-Computer -NewName $vmname -Force
 }
 
+#
+# disable server manager from showing for current user
+#
+Update-Progress -Status "Disabling server manager for current user" -Step 1
+New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
+
+#
+# disable server manager from showing for all future users
+#
+REG LOAD HKU\DefaultUser $env:systemdrive\Users\Default\NTUSER.DAT
+REG ADD "HKU\DefaultUser\Software\Policies\Microsoft\Windows NT\Terminal Services" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f
+REG UNLOAD HKU\DefaultUser
+
+#
+# install .net 4.6.1 if needed
+#
 if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 394271) {
-    Update-Progress -Status "Installing .NET Framework 4.6.1" -Step 1
+    Update-Progress -Status "Installing .NET Framework 4.6.1" -Step 2
     Install-NETFramework461
 }
 
-
-
+#
+# install WMF 5 if needed
+#
 if ($PSVersionTable.PSVersion.Major -lt 5) {
-    Update-Progress -Status "Installing Windows Management Framework 5.0" -Step 2
+    Update-Progress -Status "Installing Windows Management Framework 5.0" -Step 3
     Install-WMF5
 }
 
@@ -72,27 +93,27 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 # enable remote desktop in firewall rules in case firewall is turned back on
 #
 if (!(Get-NetFirewallRule -DisplayGroup "Remote Desktop").Enabled) {
-    Update-Progress -Status "Enabling Remote Desktop firewall rule" -Step 3
+    Update-Progress -Status "Enabling Remote Desktop firewall rule" -Step 4
     Set-NetFirewallRule -DisplayGroup "Remote Desktop" -Enabled True
 }
 
 #
 # enable remote desktop
 #
-Update-Progress -Status "Enabling Remote Desktop" -Step 4
+Update-Progress -Status "Enabling Remote Desktop" -Step 5
 (Get-WmiObject Win32_TerminalServiceSetting -Namespace root\cimv2\TerminalServices).SetAllowTsConnections(1,1) | Out-Null
 (Get-WmiObject -Class "Win32_TSGeneralSetting" -Namespace root\cimv2\TerminalServices -Filter "TerminalName='RDP-tcp'").SetUserAuthenticationRequired(0) | Out-Null
 
 #
 # disable firewall
 #
-Update-Progress -Status "Disabling Windows Firewall" -Step 5
+Update-Progress -Status "Disabling Windows Firewall" -Step 6
 Get-NetFirewallProfile | Set-NetFirewallProfile -Enabled False
 
 #
 # disable privacy IPv6 addresses
 #
-Update-Progress -Status "Disabling privacy IPv6 addresses" -Step 6
+Update-Progress -Status "Disabling privacy IPv6 addresses" -Step 7
 netsh interface ipv6 set privacy state=disabled store=active | Out-Null
 netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
 netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
@@ -102,7 +123,7 @@ netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent |
 # disable task offloading
 #
 if ((Get-NetOffloadGlobalSetting).TaskOffload -eq 'Enabled') {
-    Update-Progress -Status "Disabling global task offload" -Step 7
+    Update-Progress -Status "Disabling global task offload" -Step 8
     Set-NetOffloadGlobalSetting -TaskOffload Disabled
 }
 
@@ -110,22 +131,9 @@ if ((Get-NetOffloadGlobalSetting).TaskOffload -eq 'Enabled') {
 # enable smartscreen
 #
 if ((Get-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer).SmartScreenEnabled -ne 'RequireAdmin') {
-    Update-Progress -Status "Enabling SmartScreen" -Step 8
+    Update-Progress -Status "Enabling SmartScreen" -Step 9
     Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name SmartScreenEnabled -Value 'RequireAdmin' -Force
 }
-
-#
-# disable server manager from showing for current user
-#
-Update-Progress -Status "Disabling server manager for current user" -Step 9
-New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
-
-#
-# disable server manager from showing for all future users
-#
-REG LOAD HKU\DefaultUser $env:systemdrive\Users\Default\NTUSER.DAT
-REG ADD "HKU\DefaultUser\Software\Policies\Microsoft\Windows NT\Terminal Services" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f
-REG UNLOAD HKU\DefaultUser
 
 #
 # disable printer direction on the server side to keep event log clean
