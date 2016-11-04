@@ -44,7 +44,7 @@ Function Install-WMF5
 
 Function Install-7Zip
 {
-    $url = 'http://www.7-zip.org/a/7z1604-x64.exe'
+    $url = 'http://www.7-zip.org/a/7z1604-x64.msi'
     $msi = "$env:windir\temp\7z1604-x64.exe"
     Invoke-WebRequest $url -OutFile $msi
     & msiexec.exe /i $msi /qb /norestart | Out-Host
