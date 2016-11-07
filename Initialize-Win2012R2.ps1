@@ -64,9 +64,11 @@ Function Update-Progress
 #
 # rename to standard
 #
-$vmname = (Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").GetValue("VirtualMachineName")
-if ($env:computername -ne $vmname) {
-    Rename-Computer -NewName $vmname -Force
+if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters') {
+    $vmname = (Get-Item "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters").GetValue("VirtualMachineName")
+    if ($env:computername -ne $vmname) {
+        Rename-Computer -NewName $vmname -Force
+    }
 }
 
 #
