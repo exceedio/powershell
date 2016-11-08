@@ -15,7 +15,7 @@
 
     This script can be run repeatedly until there are no further updates
     to install. This script will cause the system on which it is running
-    to restart automatically.
+    to restart automatically. 
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2012R2.ps1 | iex
 .NOTES
