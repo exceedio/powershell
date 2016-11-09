@@ -23,8 +23,10 @@ if ((Get-WmiObject win32_computersystem).PartOfDomain -eq $false) {
     $netbios = Read-Host "Domain NETBIOS name?"
     $publicdomain = Read-Host "Primary public domain name?"
     $domainname = "$netbios.$publicdomain"
-    Test-ADDSForestInstallation -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -InstallDNS
-    #Install-ADDSForest -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -InstallDNS
+    $testresult = Test-ADDSForestInstallation -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -CreateDnsDelegation $false -InstallDNS
+    if ($testresult.Status -eq 'Success') {
+        Install-ADDSForest -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -InstallDNS
+    }
 } else {
     Write-Output "Computer is already part of domain"
 }
