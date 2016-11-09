@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Configures Windows Server 2012 R2 as the first site server.
 .DESCRIPTION
