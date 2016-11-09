@@ -72,6 +72,18 @@ if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters') {
 }
 
 #
+#
+#
+if ((Get-NetIPInterface -InterfaceAlias Ethernet -AddressFamily IPv4).Dhcp -eq 'Enabled') {
+    $staticip = Read-Host "Static IP address?"
+    $staticnm = Read-Host "Static subnet prefix length (e.g 24)?"
+    $staticgw = Read-Host "Static default gateway?"
+    $staticns = Read-Host "Static DNS server(s) (comma separated)?"
+    New-NetIPAddress -InterfaceAlias Ethernet -AddressFamily IPv4 -IPAddress $staticip -PrefixLength $staticnm -DefaultGateway $staticgw
+    Set-DnsClientServerAddress -InterfaceAlias Ethernet -ServerAddresses $staticns
+}
+
+#
 # disable server manager from showing for current user
 #
 Update-Progress -Status "Disabling server manager for current user" -Step 1

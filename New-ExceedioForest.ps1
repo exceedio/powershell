@@ -12,14 +12,19 @@
 #>
 
 if (!((Get-WindowsFeature -Name AD-Domain-Services).Installed)) {
-    Write-Host "Installing ADDS"
+    Write-Warning "Installing ADDS"
     Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 } else {
-    Write-Host "ADDS is installed" -ForegroundColor Green
+    Write-Output "ADDS is installed"
 }
 
 if ((Get-WmiObject win32_computersystem).PartOfDomain -eq $false) {
-    
+    Write-Warning "Installing new forest"
+    $netbios = Read-Host "Domain NETBIOS name?"
+    $publicdomain = Read-Host "Primary public domain name?"
+    $domainname = "$netbios.$publicdomain"
+    Test-ADDSForestInstallation -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -InstallDNS
+    #Install-ADDSForest -DomainName $domainname -DomainNetbiosName $netbios -ForestMode Win2012R2 -DomainMode Win2012R2 -InstallDNS
 } else {
-    Write-Host "Computer is already part of domain" -ForegroundColor Green
+    Write-Output "Computer is already part of domain"
 }
