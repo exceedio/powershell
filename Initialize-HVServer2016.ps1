@@ -264,8 +264,12 @@ if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
     Write-Warning "Modify this script to download BIOS, firmware, and drivers for model $((gwmi Win32_ComputerSystem).Model)"
 }
 
-iwr http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe -UseBasicParsing -OutFile OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe
-iwr http://downloads.dell.com/FOLDER03906702M/1/OM-iSM-Dell-Web-X64-2.4.0-358_A00.exe -UseBasicParsing -OutFile OM-iSM-Dell-Web-X64-2.4.0-358_A00.exe
+#
+# not model specific
+#
+
+Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe
+Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03906702M/1/OM-iSM-Dell-Web-X64-2.4.0-358_A00.exe
 
 pause
 
