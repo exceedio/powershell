@@ -18,7 +18,7 @@ function Download-FileToCurrentFolder {
         [string] $Uri
     )
     $filename = $Uri.Substring($Uri.LastIndexOf('/') + 1, $Uri.Length - $Uri.LastIndexOf('/') -1)
-    if (Test-Path $filename) {
+    if (!(Test-Path $filename)) {
         iwr -Uri $Uri -UseBasicParsing -OutFile $filename
     }
 }
