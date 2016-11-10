@@ -198,16 +198,16 @@ if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
     Write-Output "Virtual machine team already exists"
 }
 
-if ($vmswitchnic -ne '') {
-    if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
+if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
+    if ($vmswitchnic -ne '') {
         Write-Warning "Creating virtual switch $vmswitchname on $vmswitchnic"
         New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
+    } else {
+        Write-Warning "Could not reliability determine if virtual switch exists; you'll need to configure manually"
     }
-    else {
-        Write-Output "Virtual switch $vmswitchname already exists"
-    }
-} else {
-    Write-Warning "Could not reliability determine if virtual switch exists; you'll need to configure manually"
+}
+else {
+    Write-Output "Virtual switch $vmswitchname already exists"
 }
 
 pause
