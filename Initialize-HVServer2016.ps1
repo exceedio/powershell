@@ -231,6 +231,7 @@ if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
 }
 
 iwr http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe -UseBasicParsing -OutFile OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe
+iwr http://downloads.dell.com/FOLDER03906702M/1/OM-iSM-Dell-Web-X64-2.4.0-358_A00.exe -UseBasicParsing -OutFile OM-iSM-Dell-Web-X64-2.4.0-358_A00.exe
 
 pause
 
