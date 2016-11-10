@@ -7,6 +7,10 @@
     configured. Do not blindly run this script.
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2016.ps1 -UseBasicParsing | iex
+.NOTES
+    Filename : Initialize-HVServer2016.ps1
+    Author   : jreese@exceedio.com
+    Modified : Nov, 10, 2016
 #>
 
 #
@@ -16,37 +20,45 @@
 #
 
 if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services').fDisableCpm -ne 1) {
-    Write-Host "Disabling printer mapping for RDP connections"
+    Write-Warning "Disabling printer mapping for RDP connections"
     New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
     Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Name 'fDisableCpm' -Value 1 -Type DWord -Force
 } else {
-    Write-Host "Printer mapping for RDP connections has already been disabled" -ForegroundColor Green
+    Write-Output "Printer mapping for RDP connections has already been disabled"
 }
+
+pause
 
 #
 # enable RDP for all clients
 #
 
 if ((Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server').fDenyTSConnections -ne 0) {
-    Write-Host "Enabling RDP connections"
+    Write-Warning "Enabling RDP connections"
     Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0 -Type DWord -Force
 } else {
-    Write-Host "RDP connections are already enabled" -ForegroundColor Green
+    Write-Output "RDP connections are already enabled"
 }
+
+pause
 
 if ((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp').UserAuthentication -ne 0) {
-    Write-Host "Enabling RDP connections for all clients"
+    Write-Warning "Enabling RDP connections for all clients"
     Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'UserAuthentication' -Value 0 -Type DWord -Force
 } else {
-    Write-Host "RDP connections for all clients are already enabled" -ForegroundColor Green
+    Write-Output "RDP connections for all clients are already enabled"
 }
 
+pause
+
 if ((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp').SecurityLayer -ne 0) {
-    Write-Host "Changing RDP security layer from 2 to 0"
+    Write-Warning "Changing RDP security layer from 2 to 0"
     Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name 'SecurityLayer' -Value 0 -Type DWord -Force
 } else {
-    Write-Host "RDP security layer is already set to 0" -ForegroundColor Green
+    Write-Output "RDP security layer is already set to 0"
 }
+
+pause
 
 #
 # disable task offload globally - this is
@@ -55,11 +67,13 @@ if ((Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Ser
 #
 
 if ((Get-NetOffloadGlobalSetting).TaskOffload -ne 'Disabled') {
-    Write-Progress -Activity $activity -Status 'Disabling task offload' -PercentComplete ((2 / $steps) * 100)
+    Write-Warning "Disabling task offload"
     Set-NetOffloadGlobalSetting -TaskOffload Disabled
 } else {
-    Write-Host "Task offload is already disabled" -ForegroundColor Green
+    Write-Output "Task offload is already disabled"
 }
+
+pause
 
 #
 # change cd-rom letter to make room for D:
@@ -67,12 +81,14 @@ if ((Get-NetOffloadGlobalSetting).TaskOffload -ne 'Disabled') {
 
 $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5 and DriveLetter="E:"'
 if (!($cdrom)) {
-    Write-Host "Setting CD-ROM drive letter"
+    Write-Warning "Setting CD-ROM drive letter"
     $cdrom.DriveLetter = 'E:'
     $cdrom.Put() | Out-Null
 } else {
-    Write-Host "CD-ROM drive letter has already been set" -ForegroundColor Green
+    Write-Output "CD-ROM drive letter has already been set"
 }
+
+pause
 
 #
 # prepare data volume - we find the largest
@@ -81,12 +97,16 @@ if (!($cdrom)) {
 #
 
 if (!(Get-Volume -FileSystemLabel Data -ErrorAction SilentlyContinue)) {
-    Write-Host "Preparing data volume"
-    Get-Partition | Sort-Object Size | Select-Object -Last 1 | Format-Volume -AllocationUnitSize 65536 -FileSystem NTFS -NewFileSystemLabel 'Data' -ShortFileNameSupport $false
-    Get-Partition | Sort-Object Size | Select-Object -Last 1 | Set-Partition -NewDriveLetter 'D'
+    #Write-Warning "Preparing data volume"
+    #Get-Partition | Sort-Object Size | Select-Object -Last 1 | Format-Volume -AllocationUnitSize 65536 -FileSystem NTFS -NewFileSystemLabel 'Data' -ShortFileNameSupport $false -Confirm
+    #Get-Partition | Sort-Object Size | Select-Object -Last 1 | Set-Partition -NewDriveLetter 'D'
+    Write-Warning "Use Get-Partition | Format-Volume -AllocationUnitSize 65536 -FileSystem NTFS -NewFileSystemLabel 'Data' -ShortFileNameSupport `$false to format data volume"
+    pause
 } else {
-    Write-Host "Data volume has already been prepared" -ForegroundColor Green
+    Write-Output "Data volume has already been prepared"
 }
+
+pause
 
 #
 # configure hyper-v defaults - this is where virtual
@@ -95,18 +115,22 @@ if (!(Get-Volume -FileSystemLabel Data -ErrorAction SilentlyContinue)) {
 #
 
 if ((Get-VMHost).VirtualHardDiskPath -ne 'D:\Hyper-V\Virtual Hard Disks') {
-    Write-Host "Setting default virtual hard disk path"
+    Write-Warning "Setting default virtual hard disk path"
     Set-VMHost -VirtualHardDiskPath 'D:\Hyper-V\Virtual Hard Disks'
 } else {
-    Write-Host "Virtual hard disk path has already been set" -ForegroundColor Green
+    Write-Output "Virtual hard disk path has already been set"
 }
 
+pause
+
 if ((Get-VMHost).VirtualMachinePath -ne 'D:\Hyper-V') {
-    Write-Host "Setting default virtual machine path"
+    Write-Warning "Setting default virtual machine path"
     Set-VMHost -VirtualMachinePath 'D:\Hyper-V'
 } else {
-    Write-Host "Virtual machine path has already been set" -ForegroundColor Green
+    Write-Output "Virtual machine path has already been set"
 }
+
+pause
 
 #
 # configure networking - we take into account servers with
@@ -131,34 +155,36 @@ $vmswitchnic  = ''
 
 if ((Get-NetLbfoTeam).Name -notcontains $mgteamname) {
     if ($nics.Length -eq 4) {
-        Write-Host "Teaming NIC1 and NIC2 for management traffic"
+        Write-Warning "Teaming NIC1 and NIC2 for management traffic"
         New-NetLbfoTeam -Name $mgteamname -TeamMembers NIC1,NIC2 -TeamNicName VIC1 -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
     } elseif ($nics.Length -eq 2) {
-        Write-Host "Using NIC1 for management traffic"
+        Write-Warning "Using NIC1 for management traffic"
     }
 } else {
-    Write-Host "Management team already exists" -ForegroundColor Green
+    Write-Output "Management team already exists"
 }
 
 if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
     if ($nics.Length -eq 4) {
-        Write-Host "Teaming NIC3 and NIC4 for virtual machine traffic"
+        Write-Warning "Teaming NIC3 and NIC4 for virtual machine traffic"
         New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC3,NIC4 -TeamNicName VIC2 -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
         $vmswitchnic = 'VIC2'
     } elseif ($nics.Length -eq 2) {
-        Write-Host "Using NIC2 for virtual machine traffic"
+        Write-Warning "Using NIC2 for virtual machine traffic"
         $vmswitchnic = 'NIC2'
     }
 } else {
-    Write-Host "Virtual machine team already exists" -ForegroundColor Green
+    Write-Output "Virtual machine team already exists"
 }
 
 if (((Get-VMSwitch).Name -notcontains $vmswitchname) -and ($vmswitchnic -ne '')) {
-    Write-Host "Creating virtual switch $vmswitchname on $vmswitchnic"
+    Write-Warning "Creating virtual switch $vmswitchname on $vmswitchnic"
     New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
 } else {
-    Write-Host "Virtual switch $vmswitchname already exists" -ForegroundColor Green
+    Write-Output "Virtual switch $vmswitchname already exists"
 }
+
+pause
 
 #
 # disabling VMQ on all network adapters prevents known
@@ -166,67 +192,85 @@ if (((Get-VMSwitch).Name -notcontains $vmswitchname) -and ($vmswitchnic -ne ''))
 #
 
 if (Get-NetAdapterVmq | where Enabled -eq $true) {
-    Write-Host "Disabling VMQ on all network adapters"
+    Write-Warning "Disabling VMQ on all network adapters"
     Get-NetAdapter | Set-NetAdapterVmq -Enabled $false
 } else {
-    Write-Host "VMQ has already been disabled on all network adapters" -ForegroundColor Green
+    Write-Output "VMQ has already been disabled on all network adapters"
 }
+
+pause
 
 #
 # configure time synchronization
 #
 
 if ((w32tm /query /configuration) -notmatch '0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org') {
-    Write-Host "Configuring time synchronization with pool.ntp.org"
+    Write-Warning "Configuring time synchronization with pool.ntp.org"
     sc.exe config W32Time start= auto | Out-Null
     sc.exe start W32Time | Out-Null
     w32tm.exe /config /manualpeerlist:"0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org" /syncfromflags:manual /update | Out-Null
 } else {
-    Write-Host "Time synchronization is already configured for pool.ntp.org" -ForegroundColor Green
+    Write-Output "Time synchronization is already configured for pool.ntp.org"
 }
+
+pause
 
 #
 # download Dell-specific stuff
 #
 
-Write-Host "Downloading Dell-specific firmware, drivers, and software"
-iwr http://downloads.dell.com/FOLDER03944869M/3/SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE -UseBasicParsing -OutFile SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE
-iwr http://downloads.dell.com/FOLDER03940499M/3/SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE -UseBasicParsing -OutFile SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE
+if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
+    Write-Output "Downloading BIOS, firmware, and drivers for $((gwmi Win32_ComputerSystem).Model)"
+    iwr http://downloads.dell.com/FOLDER03919962M/1/BIOS_02H3F_WN64_2.2.5.EXE -UseBasicParsing -OutFile BIOS_02H3F_WN64_2.2.5.EXE
+    iwr http://downloads.dell.com/FOLDER03884128M/1/iDRAC-with-Lifecycle-Controller_Firmware_2091K_WN64_2.40.40.40_A00.EXE -UseBasicParsing -OutFile iDRAC-with-Lifecycle-Controller_Firmware_2091K_WN64_2.40.40.40_A00.EXE
+    iwr http://downloads.dell.com/FOLDER03897782M/1/Network_Firmware_FC41D_WN64_20.02.05.04.EXE -UseBasicParsing -OutFile Network_Firmware_FC41D_WN64_20.02.05.04.EXE
+    iwr http://downloads.dell.com/FOLDER03944869M/3/SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE -UseBasicParsing -OutFile SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE
+    iwr http://downloads.dell.com/FOLDER03940499M/3/SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE -UseBasicParsing -OutFile SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE
+} else {
+    Write-Warning "Modify this script to download BIOS, firmware, and drivers for model $((gwmi Win32_ComputerSystem).Model)"
+}
+
 iwr http://downloads.dell.com/FOLDER03909716M/1/OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe -UseBasicParsing -OutFile OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe
+
+pause
 
 #
 # install OMSA
 #
 
-if (!(Test-Path 'C:\Program Files\Dell\SysMgt\omsa')) {
-    Write-Host "Installing Openmanage Server Administrator"
-    .\OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe /auto .\OMSA
-    msiexec.exe /i .\OMSA\windows\SystemsManagementx64\SysMgmtx64.msi /qb /norestart
-} else {
-    Write-Host "Openmanage Server Administrator is already installed" -ForegroundColor Green
-}
+#if (!(Test-Path 'C:\Program Files\Dell\SysMgt\omsa')) {
+#    Write-Warning "Installing Openmanage Server Administrator"
+#    .\OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe /auto .\OMSA
+#    msiexec.exe /i .\OMSA\windows\SystemsManagementx64\SysMgmtx64.msi /qb /norestart
+#} else {
+#    Write-Output "Openmanage Server Administrator is already installed"
+#}
 
 #
 # temporarily disable Windows Firewall
 #
 
 if (Get-NetFirewallProfile -All | Where Enabled -eq $true) {
-    Write-Host "Disabling all firewall profiles"
+    Write-Warning "Disabling all firewall profiles"
     Get-NetFirewallProfile -All | Set-NetFirewallProfile -Enabled False
 } else {
-    Write-Host "All firewall profiles are already disabled" -ForegroundColor Green
+    Write-Output "All firewall profiles are already disabled"
 }
+
+pause
 
 #
 # create location for ISO files
 #
 
 if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
-    Write-Host "Creating location for ISO files"
+    Write-Warning "Creating location for ISO files"
     New-Item -Path 'C:\Users\Public\Documents\ISO' -ItemType Directory -Force | Out-Null
 } else {
-    Write-Host "ISO file location already exists" -ForegroundColor Green
+    Write-Output "ISO file location already exists"
 }
+
+pause
 
 #
 # set computer name based on asset tag - this is why it
@@ -236,12 +280,14 @@ if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
 
 $newname = -Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)
 if ($env:computername -ne $newname) {
-    Write-Host "Computer named changed and will now restart; run this script again after restart to continue"
+    Write-Warning "Computer name will be changed to $newname and will restart; run this script again after restart to continue"
     pause
     Rename-Computer -NewName $newname -Restart
 } else {
-    Write-Host "Computer name has already been changed" -ForegroundColor Green
+    Write-Output "Computer name has already been changed"
 }
+
+pause
 
 #
 # configure idrac address and change default password
@@ -252,7 +298,7 @@ $racnm = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
 $racgw = Read-Host "What is the desired iDRAC gateway (e.g. 192.168.0.1)?"
 $racpw = Read-Host "What is the Dell iDRAC ($newname) password?"
 
-Write-Host "Configuring iDRAC address and setting password"
+Write-Output "Configuring iDRAC address and setting password"
 racadm set iDRAC.IPv4.Address $racip | Out-Null
 racadm set iDRAC.IPv4.Netmask $racnm | Out-Null
 racadm set iDRAC.IPv4.Gateway $racgw | Out-Null
@@ -266,16 +312,16 @@ racadm set iDRAC.Users.2.Password $racpw | Out-Null
 
 $username = Read-Host "Type the username of the local admin"
 if ((Get-LocalUser).Name -notcontains $username) {
-    Write-Host "Creating local administrator"
+    Write-Warning "Creating local administrator"
     net.exe user $username * /add
     net.exe localgroup Administrators $username /add | Out-Null
     wmic.exe useraccount where name=`"$username`" set PasswordExpires=False | Out-Null
 } else {
-    Write-Host "Local administrator already exists" -ForegroundColor Green
+    Write-Output "Local administrator already exists"
 }
 
 #
 # finish up
 #
 
-Write-Host "Server has been successfully initialized" -ForegroundColor Green
+Write-Output "Server has been successfully initialized"
