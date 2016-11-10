@@ -209,7 +209,7 @@ pause
 
 if (Get-NetAdapterVmq | where Enabled -eq $true) {
     Write-Warning "Disabling VMQ on all network adapters"
-    Get-NetAdapter | Set-NetAdapterVmq -Enabled $false
+    Get-NetAdapter | Set-NetAdapterVmq -Enabled $false -ErrorAction SilentlyContinue
 } else {
     Write-Output "VMQ has already been disabled on all network adapters"
 }
@@ -242,6 +242,14 @@ if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
     iwr http://downloads.dell.com/FOLDER03897782M/1/Network_Firmware_FC41D_WN64_20.02.05.04.EXE -UseBasicParsing -OutFile Network_Firmware_FC41D_WN64_20.02.05.04.EXE
     iwr http://downloads.dell.com/FOLDER03944869M/3/SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE -UseBasicParsing -OutFile SAS-RAID_Firmware_2H45F_WN64_25.5.0.0018_A08.EXE
     iwr http://downloads.dell.com/FOLDER03940499M/3/SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE -UseBasicParsing -OutFile SAS-RAID_Driver_T244W_WN64_6.604.06.00_A01.EXE
+} elseif ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R520') {
+    Write-Output "Downloading BIOS, firmware, and drivers for $((gwmi Win32_ComputerSystem).Model)"
+    iwr http://downloads.dell.com/FOLDER02803634M/1/R520_BIOS_35C9T_WN64_2.4.2.EXE -UseBasicParsing -OutFile R520_BIOS_35C9T_WN64_2.4.2.EXE
+    iwr http://downloads.dell.com/FOLDER03884232M/1/iDRAC-with-Lifecycle-Controller_Firmware_WH24V_WN64_2.40.40.40_A00.EXE -UseBasicParsing -OutFile iDRAC-with-Lifecycle-Controller_Firmware_WH24V_WN64_2.40.40.40_A00.EXE
+    iwr http://downloads.dell.com/FOLDER03658126M/1/Network_Firmware_21DWR_WN64_20.2.17.EXE -UseBasicParsing -OutFile Network_Firmware_21DWR_WN64_20.2.17.EXE
+    iwr http://downloads.dell.com/FOLDER03657710M/1/Network_Firmware_V6TPJ_WN64_17.5.10_A00.EXE -UseBasicParsing -OutFile Network_Firmware_V6TPJ_WN64_17.5.10_A00.EXE
+    iwr http://downloads.dell.com/FOLDER03129248M/1/SAS-RAID_Firmware_1TJRK_WN64_21.3.2-0005_A07.EXE -UseBasicParsing -OutFile SAS-RAID_Firmware_1TJRK_WN64_21.3.2-0005_A07.EXE
+}
 } else {
     Write-Warning "Modify this script to download BIOS, firmware, and drivers for model $((gwmi Win32_ComputerSystem).Model)"
 }
@@ -255,13 +263,13 @@ pause
 # install OMSA
 #
 
-#if (!(Test-Path 'C:\Program Files\Dell\SysMgt\omsa')) {
-#    Write-Warning "Installing Openmanage Server Administrator"
-#    .\OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe /auto .\OMSA
-#    msiexec.exe /i .\OMSA\windows\SystemsManagementx64\SysMgmtx64.msi /qb /norestart
-#} else {
-#    Write-Output "Openmanage Server Administrator is already installed"
-#}
+if (!(Test-Path "$env:programfiles\Dell\SysMgt\omsa")) {
+    Write-Warning "Installing OpenManage Server Administrator"
+    .\OM-SrvAdmin-Dell-Web-WINX64-8.4.0-2193_A00.exe /auto .\OMSA
+    msiexec.exe /i "$($pwd.Path)\OMSA\windows\SystemsManagementx64\SysMgmtx64.msi" /qb /norestart
+} else {
+    Write-Output "Openmanage Server Administrator is already installed"
+}
 
 #
 # temporarily disable Windows Firewall
@@ -290,38 +298,25 @@ if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
 pause
 
 #
-# set computer name based on asset tag - this is why it
-# is important to set asset tag in BIOS during the initial
-# provisioning step
-#
-
-$newname = -Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)
-if ($env:computername -ne $newname) {
-    Write-Warning "Computer name will be changed to $newname and will restart; run this script again after restart to continue"
-    pause
-    Rename-Computer -NewName $newname -Restart
-} else {
-    Write-Output "Computer name has already been changed"
-}
-
-pause
-
-#
 # configure idrac address and change default password
 #
 
-$racip = Read-Host "What is the desired iDRAC address (e.g. 192.168.0.201)?"
-$racnm = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
-$racgw = Read-Host "What is the desired iDRAC gateway (e.g. 192.168.0.1)?"
-$racpw = Read-Host "What is the Dell iDRAC ($newname) password?"
+if (Test-Path "$env:programfiles\Dell\SysMgt\idrac\racadm.exe") {
+    $racip = Read-Host "What is the desired iDRAC address (e.g. 192.168.0.201)?"
+    $racnm = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
+    $racgw = Read-Host "What is the desired iDRAC gateway (e.g. 192.168.0.1)?"
+    $racpw = Read-Host "What is the Dell iDRAC ($newname) password?"
 
-Write-Output "Configuring iDRAC address and setting password"
-racadm set iDRAC.IPv4.Address $racip | Out-Null
-racadm set iDRAC.IPv4.Netmask $racnm | Out-Null
-racadm set iDRAC.IPv4.Gateway $racgw | Out-Null
-racadm set iDRAC.IPv4.DNS1 8.8.8.8 | Out-Null
-racadm set iDRAC.IPv4.DNS2 8.8.4.4 | Out-Null
-racadm set iDRAC.Users.2.Password $racpw | Out-Null
+    Write-Output "Configuring iDRAC address and setting password"
+    racadm set iDRAC.IPv4.Address $racip | Out-Null
+    racadm set iDRAC.IPv4.Netmask $racnm | Out-Null
+    racadm set iDRAC.IPv4.Gateway $racgw | Out-Null
+    racadm set iDRAC.IPv4.DNS1 8.8.8.8 | Out-Null
+    racadm set iDRAC.IPv4.DNS2 8.8.4.4 | Out-Null
+    racadm set iDRAC.Users.2.Password $racpw | Out-Null
+} else {
+    Write-Warning "Dell OMSA is not installed so we cannot configure iDRAC"
+}
 
 #
 # add a user
@@ -336,6 +331,23 @@ if ((Get-LocalUser).Name -notcontains $username) {
 } else {
     Write-Output "Local administrator already exists"
 }
+
+#
+# set computer name based on asset tag - this is why it
+# is important to set asset tag in BIOS during the initial
+# provisioning step
+#
+
+$newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
+if ($env:computername -ne $newname) {
+    Write-Warning "Computer name will be changed to $newname and will restart; run this script again after restart to continue"
+    pause
+    Rename-Computer -NewName $newname -Restart
+} else {
+    Write-Output "Computer name has already been changed"
+}
+
+pause
 
 #
 # finish up
