@@ -19,6 +19,11 @@
 # RDP
 #
 
+if (!(Test-Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services')) {
+    Write-Warning "Creating Terminal Services policy registry key"
+    New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
+}
+
 if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services').fDisableCpm -ne 1) {
     Write-Warning "Disabling printer mapping for RDP connections"
     New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
@@ -160,6 +165,9 @@ if ((Get-NetLbfoTeam).Name -notcontains $mgteamname) {
     } elseif ($nics.Length -eq 2) {
         Write-Warning "Using NIC1 for management traffic"
     }
+    else {
+        Write-Warning "You have $($nics.Length) NICs; you'll need to configure teaming for $mgteamname manually"
+    }
 } else {
     Write-Output "Management team already exists"
 }
@@ -173,15 +181,23 @@ if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         Write-Warning "Using NIC2 for virtual machine traffic"
         $vmswitchnic = 'NIC2'
     }
+    else {
+        Write-Warning "You have $($nics.Length) NICs; you'll need to configure teaming for $vmteamname manually"
+    }
 } else {
     Write-Output "Virtual machine team already exists"
 }
 
-if (((Get-VMSwitch).Name -notcontains $vmswitchname) -and ($vmswitchnic -ne '')) {
-    Write-Warning "Creating virtual switch $vmswitchname on $vmswitchnic"
-    New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
+if ($vmswitchnic -ne '') {
+    if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
+        Write-Warning "Creating virtual switch $vmswitchname on $vmswitchnic"
+        New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
+    }
+    else {
+        Write-Output "Virtual switch $vmswitchname already exists"
+    }
 } else {
-    Write-Output "Virtual switch $vmswitchname already exists"
+    Write-Warning "Could not reliability determine if virtual switch exists; you'll need to configure manually"
 }
 
 pause
@@ -204,7 +220,7 @@ pause
 # configure time synchronization
 #
 
-if ((w32tm /query /configuration) -notmatch '0.us.pool.ntp.org,1.us.pool.ntp.org,2.us.pool.ntp.org,3.us.pool.ntp.org') {
+if ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -notmatch '0.us.pool.ntp.org') {
     Write-Warning "Configuring time synchronization with pool.ntp.org"
     sc.exe config W32Time start= auto | Out-Null
     sc.exe start W32Time | Out-Null
