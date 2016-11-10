@@ -249,7 +249,6 @@ if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
     iwr http://downloads.dell.com/FOLDER03658126M/1/Network_Firmware_21DWR_WN64_20.2.17.EXE -UseBasicParsing -OutFile Network_Firmware_21DWR_WN64_20.2.17.EXE
     iwr http://downloads.dell.com/FOLDER03657710M/1/Network_Firmware_V6TPJ_WN64_17.5.10_A00.EXE -UseBasicParsing -OutFile Network_Firmware_V6TPJ_WN64_17.5.10_A00.EXE
     iwr http://downloads.dell.com/FOLDER03129248M/1/SAS-RAID_Firmware_1TJRK_WN64_21.3.2-0005_A07.EXE -UseBasicParsing -OutFile SAS-RAID_Firmware_1TJRK_WN64_21.3.2-0005_A07.EXE
-}
 } else {
     Write-Warning "Modify this script to download BIOS, firmware, and drivers for model $((gwmi Win32_ComputerSystem).Model)"
 }
