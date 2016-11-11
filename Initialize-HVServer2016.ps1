@@ -259,7 +259,12 @@ if ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge R530') {
     Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03884232M/1/iDRAC-with-Lifecycle-Controller_Firmware_WH24V_WN64_2.40.40.40_A00.EXE
     Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03658126M/1/Network_Firmware_21DWR_WN64_20.2.17.EXE
     Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03657710M/1/Network_Firmware_V6TPJ_WN64_17.5.10_A00.EXE
-    Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03129248M/1/SAS-RAID_Firmware_1TJRK_WN64_21.3.2-0005_A07.EXE
+} elseif ((gwmi Win32_ComputerSystem).Model -eq 'PowerEdge T310') {
+    Write-Output "Downloading BIOS, firmware, and drivers for $((gwmi Win32_ComputerSystem).Model)"
+    Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER01733428M/1/T310_BIOS_D3D3V_WN64_1.12.0.EXE
+    Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER00808235M/1/T310_ESM_Firmware_KM5PY_WN32_1.92_A00.EXE
+    Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER03355299M/3/Network_Firmware_35RF5_WN64_7.12.19.EXE
+    Download-FileToCurrentFolder -Uri http://downloads.dell.com/FOLDER00416628M/1/SAS-RAID_Firmware_WJG5R_WN32_5.2.2-0072_A08.EXE
 } else {
     Write-Warning "Modify this script to download BIOS, firmware, and drivers for model $((gwmi Win32_ComputerSystem).Model)"
 }
