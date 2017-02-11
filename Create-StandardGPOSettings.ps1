@@ -7,7 +7,7 @@
     (Adobe, Java, etc.). These applications need to be kept up to date using out of
     band tools.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Set-StandardGPOSettings.ps1 | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Create-StandardGPOSettings.ps1 | iex
 .NOTES
     Author   : jreese@exceedio.com
     Modified : Feb, 10, 2017
