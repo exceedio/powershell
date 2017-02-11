@@ -7,7 +7,7 @@
     (Adobe, Java, etc.). These applications need to be kept up to date using out of
     band tools.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Create-StandardGPOSettings.ps1 | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Create-StandardGPOSettings.ps1 -UseBasicParsing | iex
 .NOTES
     Author   : jreese@exceedio.com
     Modified : Feb, 10, 2017
@@ -65,21 +65,21 @@ $Error.PSBase.Clear()
 
 $gpo = Get-GPO -Name $ClientGPO
 
-if ($Error.Count -eq 0) {
+if ($Error.Count -ne 0) {
     Write-Error "GPO $ClientGPO does not exist. Either create it or specify a different name using the -ClientGPO parameter."
     return
 }
 
 $gpo = Get-GPO -Name $ServerGPO
 
-if ($Error.Count -eq 0) {
+if ($Error.Count -ne 0) {
     Write-Error "GPO $ServerGPO does not exist. Either create it or specify a different name using the -ServerGPO parameter."
     return
 }
 
 $gpo = Get-GPO -Name $UserGPO
 
-if ($Error.Count -eq 0) {
+if ($Error.Count -ne 0) {
     Write-Error "GPO $UserGPO does not exist. Either create it or specify a different name using the -UserGPO parameter."
     return
 }
