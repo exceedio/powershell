@@ -34,7 +34,7 @@ function Update-GPPrefRegistryValue {
     $pref = Get-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName -ErrorAction SilentlyContinue
     
     if ($pref -ne $null -and $pref.Value -eq $Value) {
-        Write-Output "No update needed for $Key\$ValueName"
+        Write-Output "No update on $Key\$ValueName"
         return
     }
     
