@@ -31,7 +31,12 @@ function Update-GPPrefRegistryValue {
         [psobject] $Type = 'DWord'
     )
 
-    $pref = Get-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName
+    $pref = Get-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName -ErrorAction SilentlyContinue
+    
+    if ($pref -ne $null -and $pref.Value -eq $Value) {
+        Write-Output "No update needed for $Key\$ValueName"
+        return
+    }
     
     if ($pref -ne $null -and $pref.Value -ne $Value) {
         Remove-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName
@@ -39,9 +44,8 @@ function Update-GPPrefRegistryValue {
     
     if ($pref -eq $null -or $pref.Value -ne $Value) {
         Set-GPPrefRegistryValue -Name $Name -Action $Action -Context Context -Key $Key -ValueName $ValueName -Type $Type -Value $Value
+        Write-Output "Updated $Key\$ValueName"
     }
-    
-    Write-Output "Updated pref $ValueName for $Key"
 }
 
 function Configure-AdobeAcrobat11 {
