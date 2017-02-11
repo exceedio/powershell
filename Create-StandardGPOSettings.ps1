@@ -62,7 +62,7 @@ function Configure-AdobeReaderDC {
     Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cWelcomeScreen" -ValueName bShowWelcomeScreen -Value 0
 }
 
-function Disable-JavaUpdate {
+function Configure-Java {
     Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Value 0
     Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName EnableJavaUpdate -Value 0
     Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Wow6432Node\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Value 0
@@ -96,8 +96,16 @@ if ((Get-Module -ListAvailable GroupPolicy) -eq $null) {
 
 Import-Module GroupPolicy
 
+#
+# make sure necessary GPOs exist
+#
+
 Test-GPO $ClientGPO
 
-#Disable-AdobeUpdate -Name $ClientGPO
-#Disable-AdobeFeatures -Name $ClientGPO
-#Disable-JavaUpdate -Name $ClientGPO
+#
+# begin work
+#
+
+Configure-AdobeAcrobat11
+Configure-AdobeReaderDC
+Configure-Java
