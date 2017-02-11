@@ -71,33 +71,22 @@ function Disable-JavaUpdate {
     Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -ValueName SunJavaUpdateSched -Type String -Value "" -Action Delete
 }
 
-function Test-Inputs() {
+function Test-GPO {
+    param (
+        [string] $Name
+    )
 
     $ErrorActionPreference = 'SilentlyContinue'
     $Error.PSBase.Clear()
 
-    $gpo = Get-GPO -Name $ClientGPO
+    $gpo = Get-GPO -Name $Name
 
     if ($Error.Count -ne 0) {
-        Write-Warning "GPO $ClientGPO does not exist. Either create it or specify a different name using the -ClientGPO parameter."
-        return $false
+        New-GPO -Name $ClientGPO
+        Write-Warning "GPO $Name did not exist so it was created. You will need to link it to one or more OUs."
+    } else {
+        Write-Output "GPO $Name exists"
     }
-
-    $gpo = Get-GPO -Name $ServerGPO
-
-    if ($Error.Count -ne 0) {
-        Write-Warning "GPO $ServerGPO does not exist. Either create it or specify a different name using the -ServerGPO parameter."
-        return $false
-    }
-
-    $gpo = Get-GPO -Name $UserGPO
-
-    if ($Error.Count -ne 0) {
-        Write-Warning "GPO $UserGPO does not exist. Either create it or specify a different name using the -UserGPO parameter."
-        return $false
-    }
-    Write-Output "Inputs are valid"
-    return $true
 }
 
 if ((Get-Module -ListAvailable GroupPolicy) -eq $null) {
@@ -107,9 +96,7 @@ if ((Get-Module -ListAvailable GroupPolicy) -eq $null) {
 
 Import-Module GroupPolicy
 
-if (!(Test-Inputs)) {
-    return
-}
+Test-GPO $ClientGPO
 
 #Disable-AdobeUpdate -Name $ClientGPO
 #Disable-AdobeFeatures -Name $ClientGPO
