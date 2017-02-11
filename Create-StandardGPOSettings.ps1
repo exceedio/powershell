@@ -19,72 +19,98 @@ param (
     [string] $UserGPO   = 'EXDO-User'
 )
 
-function Disable-AdobeUpdate {
+function Update-GPPrefRegistryValue {
+
     param (
-        [string] $Name
+        [string] $Name,
+        [PreferenceAction] $Action = 'Update',
+        [GpoConfiguration] $Context = 'Computer',
+        [string] $Key,
+        [string] $ValueName,
+        [psobject] $Value,
+        [RegistryValueKind] $Type = 'DWord'
     )
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Adobe Acrobat\11.0\FeatureLockDown" -ValueName bUpdater -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown" -ValueName bUpdater -Type DWord -Value 0
+
+    $pref = Get-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName
+    
+    if ($pref -ne $null -and $pref.Value -ne $Value) {
+        Remove-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName
+    }
+    
+    if ($pref -eq $null -or $pref.Value -ne $Value) {
+        Set-GPPrefRegistryValue -Name $Name -Action $Action -Context Context -Key $Key -ValueName $ValueName -Type $Type -Value $Value
+    }
+    
+    Write-Output "Updated pref $ValueName for $Key"
 }
 
-function Disable-AdobeFeatures {
-    param (
-        [string] $Name
-    )
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown" -ValueName bUsageMeasurement -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleAdobeDocumentServices -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleAdobeSign -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleFillSign -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleSendAndTrack -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bTogglePrefsSync -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleWebConnectors -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bAdobeSendPluginToggle -Type DWord -Value 1
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cWelcomeScreen" -ValueName bShowWelcomeScreen -Type DWord -Value 0
+function Configure-AdobeAcrobat11 {
+
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Adobe Acrobat\11.0\FeatureLockDown" -ValueName bUpdater -Value 0
+}
+
+function Configure-AdobeReaderDC {
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown" -ValueName bUpdater -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown" -ValueName bUsageMeasurement -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleAdobeDocumentServices -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleAdobeSign -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleFillSign -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleSendAndTrack -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bTogglePrefsSync -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bToggleWebConnectors -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cServices" -ValueName bAdobeSendPluginToggle -Value 1
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown\cWelcomeScreen" -ValueName bShowWelcomeScreen -Value 0
 }
 
 function Disable-JavaUpdate {
-    param (
-        [string] $Name
-    )
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName EnableJavaUpdate -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Wow6432Node\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Update -Context Computer -Key "HKLM\SOFTWARE\Wow6432Node\JavaSoft\Java Update\Policy" -ValueName EnableJavaUpdate -Type DWord -Value 0
-    Set-GPPrefRegistryValue -Name $Name -Action Delete -Context Computer -Key "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -ValueName SunJavaUpdateSched -Type String -Value ""
-    Set-GPPrefRegistryValue -Name $Name -Action Delete -Context Computer -Key "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -ValueName SunJavaUpdateSched -Type String -Value ""
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\JavaSoft\Java Update\Policy" -ValueName EnableJavaUpdate -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Wow6432Node\JavaSoft\Java Update\Policy" -ValueName NotifyDownload -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Wow6432Node\JavaSoft\Java Update\Policy" -ValueName EnableJavaUpdate -Value 0
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -ValueName SunJavaUpdateSched -Type String -Value "" -Action Delete
+    Update-GPPrefRegistryValue -Name $ClientGPO -Key "HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -ValueName SunJavaUpdateSched -Type String -Value "" -Action Delete
+}
+
+function Test-Inputs() {
+
+    $ErrorActionPreference = 'SilentlyContinue'
+    $Error.PSBase.Clear()
+
+    $gpo = Get-GPO -Name $ClientGPO
+
+    if ($Error.Count -ne 0) {
+        Write-Warning "GPO $ClientGPO does not exist. Either create it or specify a different name using the -ClientGPO parameter."
+        return $false
+    }
+
+    $gpo = Get-GPO -Name $ServerGPO
+
+    if ($Error.Count -ne 0) {
+        Write-Warning "GPO $ServerGPO does not exist. Either create it or specify a different name using the -ServerGPO parameter."
+        return $false
+    }
+
+    $gpo = Get-GPO -Name $UserGPO
+
+    if ($Error.Count -ne 0) {
+        Write-Warning "GPO $UserGPO does not exist. Either create it or specify a different name using the -UserGPO parameter."
+        return $false
+    }
+    Write-Output "Inputs are valid"
+    return $true
+}
+
+if ((Get-Module -ListAvailable GroupPolicy) -eq $null) {
+    Write-Warning "Missing GroupPolicy module. Run from 2008 R2 or later DC or PC with RSAT."
+    return  
 }
 
 Import-Module GroupPolicy
 
-#
-# validate inputs
-#
-
-$ErrorActionPreference = 'SilentlyContinue'
-$Error.PSBase.Clear()
-
-$gpo = Get-GPO -Name $ClientGPO
-
-if ($Error.Count -ne 0) {
-    Write-Error "GPO $ClientGPO does not exist. Either create it or specify a different name using the -ClientGPO parameter."
+if (!(Test-Inputs)) {
     return
 }
 
-$gpo = Get-GPO -Name $ServerGPO
-
-if ($Error.Count -ne 0) {
-    Write-Error "GPO $ServerGPO does not exist. Either create it or specify a different name using the -ServerGPO parameter."
-    return
-}
-
-$gpo = Get-GPO -Name $UserGPO
-
-if ($Error.Count -ne 0) {
-    Write-Error "GPO $UserGPO does not exist. Either create it or specify a different name using the -UserGPO parameter."
-    return
-}
-
-
-Disable-AdobeUpdate -Name $ClientGPO
-Disable-AdobeFeatures -Name $ClientGPO
-Disable-JavaUpdate -Name $ClientGPO
+#Disable-AdobeUpdate -Name $ClientGPO
+#Disable-AdobeFeatures -Name $ClientGPO
+#Disable-JavaUpdate -Name $ClientGPO
