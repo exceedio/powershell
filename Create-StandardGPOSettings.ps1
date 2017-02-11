@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Configures standard group policy settings
 .DESCRIPTION
