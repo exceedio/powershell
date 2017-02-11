@@ -43,7 +43,7 @@ function Update-GPPrefRegistryValue {
     }
     
     if ($pref -eq $null -or $pref.Value -ne $Value) {
-        Set-GPPrefRegistryValue -Name $Name -Action $Action -Context Context -Key $Key -ValueName $ValueName -Type $Type -Value $Value
+        Set-GPPrefRegistryValue -Name $Name -Action $Action -Context $Context -Key $Key -ValueName $ValueName -Type $Type -Value $Value
         Write-Output "Updated $Key\$ValueName"
     }
 }
