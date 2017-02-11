@@ -23,12 +23,12 @@ function Update-GPPrefRegistryValue {
 
     param (
         [string] $Name,
-        [PreferenceAction] $Action = 'Update',
-        [GpoConfiguration] $Context = 'Computer',
+        [psobject] $Action = 'Update',
+        [psobject] $Context = 'Computer',
         [string] $Key,
         [string] $ValueName,
         [psobject] $Value,
-        [RegistryValueKind] $Type = 'DWord'
+        [psobject] $Type = 'DWord'
     )
 
     $pref = Get-GPPrefRegistryValue -Name $Name -Context $Context -Key $Key -ValueName $ValueName
