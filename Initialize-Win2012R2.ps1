@@ -206,7 +206,7 @@ Function Download-DattoWindowsAgent
 {
     if (!(Test-Path "$env:windir\Temp\DattoWindowsAgent.exe"))
     {
-	    Write-Output "Downloading Datto Windows Agent to $env:windir\Temp..."
+        Write-Output "Downloading Datto Windows Agent to $env:windir\Temp..."
         iwr 'https://www.datto.com/downloads/DattoWindowsAgent.exe' -OutFile "$env:windir\Temp\DattoWindowsAgent.exe"
     }
 }
@@ -215,7 +215,7 @@ Function Download-KAgent
 {
     if (!(Test-Path "$env:windir\Temp\KcsSetup.exe"))
     {
-	    Write-Output "Downloading K Agent to $env:windir\Temp..."
+        Write-Output "Downloading K Agent to $env:windir\Temp..."
         iwr 'https://ksy.exceedio.com/install/VSA-default-93643676/KcsSetup.exe' -OutFile "$env:windir\Temp\KcsSetup.exe"
     }
 }
