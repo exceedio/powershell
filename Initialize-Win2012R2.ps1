@@ -35,15 +35,16 @@ Function Install-NETFramework47
 		$url = 'https://download.microsoft.com/download/D/D/3/DD35CC25-6E9C-484B-A746-C5BE0C923290/NDP47-KB3186497-x86-x64-AllOS-ENU.exe'
 		$exe = "$env:windir\temp\NDP47-KB3186497-x86-x64-AllOS-ENU.exe"
 		Invoke-WebRequest $url -OutFile $exe
-		& $exe /q /norestart | Out-Host
+		& $exe /q /norestart | Out-Null
 		Remove-Item $exe
 	}
 }
 
 Function Install-WMF51
 {
-	if ($PSVersionTable.PSVersion.Major -lt 5 -or ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor lt 1))
+	if ($PSVersionTable.PSVersion.Major -lt 5 -or ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -lt 1))
 	{
+		Write-Output "Installing WMF 5.1..."
 		$url = 'https://download.microsoft.com/download/6/F/5/6F5FF66C-6775-42B0-86C4-47D41F2DA187/Win8.1AndW2K12R2-KB3191564-x64.msu'
 		$msu = "$env:windir\temp\Win8.1AndW2K12R2-KB3191564-x64.msu"
 		Invoke-WebRequest $url -OutFile $msu
@@ -54,11 +55,15 @@ Function Install-WMF51
 
 Function Install-7Zip
 {
-    $url = 'http://www.7-zip.org/a/7z1604-x64.msi'
-    $msi = "$env:windir\temp\7z1604-x64.exe"
-    Invoke-WebRequest $url -OutFile $msi
-    & msiexec.exe /i $msi /qb /norestart | Out-Host
-    Remove-Item $msi
+    if (!(Test-Path 'C:\Program Files\7-Zip'))
+    {
+        Write-Output "Installing 7-Zip..."
+        $url = 'http://www.7-zip.org/a/7z1604-x64.msi'
+        $msi = "$env:windir\temp\7z1604-x64.exe"
+        Invoke-WebRequest $url -OutFile $msi
+        & msiexec.exe /i $msi /qb /norestart | Out-Host
+        Remove-Item $msi
+    }
 }
 
 Function Set-ComputerName
