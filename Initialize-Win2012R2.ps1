@@ -3,8 +3,8 @@
     Configures Windows Server 2012 R2 to standard.
 .DESCRIPTION
     Installs .NET Framework 4.7 and WMF 5.1
-	Installs 7-Zip
-	Sets static IPv4 address
+    Installs 7-Zip
+    Sets static IPv4 address
     Renames computer according to standard
     Adds firewall rules for RDP
     Enables RDP
@@ -14,7 +14,7 @@
     Disables server manager for all users
     Disables RDP printer redirection
     Installs all current updates
-	Activates Windows (optional)
+    Activates Windows (optional)
 
     This script can be run repeatedly until there are no further updates
     to install. This script will cause the system on which it is running
@@ -29,28 +29,28 @@
 
 Function Install-NETFramework47
 {
-	if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 460805)
-	{
-		Write-Output "Installing .NET Framework 4.7..."
-		$url = 'https://download.microsoft.com/download/D/D/3/DD35CC25-6E9C-484B-A746-C5BE0C923290/NDP47-KB3186497-x86-x64-AllOS-ENU.exe'
-		$exe = "$env:windir\temp\NDP47-KB3186497-x86-x64-AllOS-ENU.exe"
-		Invoke-WebRequest $url -OutFile $exe
-		& $exe /q /norestart | Out-Null
-		Remove-Item $exe
-	}
+    if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 460805)
+    {
+        Write-Output "Installing .NET Framework 4.7..."
+        $url = 'https://download.microsoft.com/download/D/D/3/DD35CC25-6E9C-484B-A746-C5BE0C923290/NDP47-KB3186497-x86-x64-AllOS-ENU.exe'
+        $exe = "$env:windir\temp\NDP47-KB3186497-x86-x64-AllOS-ENU.exe"
+        Invoke-WebRequest $url -OutFile $exe
+        & $exe /q /norestart | Out-Null
+        Remove-Item $exe
+    }
 }
 
 Function Install-WMF51
 {
-	if ($PSVersionTable.PSVersion.Major -lt 5 -or ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -lt 1))
-	{
-		Write-Output "Installing WMF 5.1..."
-		$url = 'https://download.microsoft.com/download/6/F/5/6F5FF66C-6775-42B0-86C4-47D41F2DA187/Win8.1AndW2K12R2-KB3191564-x64.msu'
-		$msu = "$env:windir\temp\Win8.1AndW2K12R2-KB3191564-x64.msu"
-		Invoke-WebRequest $url -OutFile $msu
-		& wusa.exe $msu /quiet /forcerestart | Out-Host
-		Remove-Item $msu
-	}
+    if ($PSVersionTable.PSVersion.Major -lt 5 -or ($PSVersionTable.PSVersion.Major -eq 5 -and $PSVersionTable.PSVersion.Minor -lt 1))
+    {
+        Write-Output "Installing WMF 5.1..."
+        $url = 'https://download.microsoft.com/download/6/F/5/6F5FF66C-6775-42B0-86C4-47D41F2DA187/Win8.1AndW2K12R2-KB3191564-x64.msu'
+        $msu = "$env:windir\temp\Win8.1AndW2K12R2-KB3191564-x64.msu"
+        Invoke-WebRequest $url -OutFile $msu
+        & wusa.exe $msu /quiet /forcerestart | Out-Host
+        Remove-Item $msu
+    }
 }
 
 Function Install-7Zip
@@ -178,25 +178,28 @@ Function Disable-ServerManager
 {
     if ((Get-ItemProperty -Path HKCU:\Software\Microsoft\ServerManager).DoNotOpenServerManagerAtLogon -ne 1)
     {
-		Write-Output "Disabling server manager for current user..."
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
+        Write-Output "Disabling server manager for current user..."
+        New-ItemProperty -Path "HKCU:\Software\Microsoft\ServerManager" -Name DoNotOpenServerManagerAtLogon -PropertyType DWORD -Value 1 -Force | Out-Null
 
-		#
-		# disable server manager from showing for all future users
-		#
-		REG LOAD HKU\DefaultUser $env:systemdrive\Users\Default\NTUSER.DAT
-		REG ADD "HKU\DefaultUser\Software\Microsoft\ServerManager" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f
-		REG UNLOAD HKU\DefaultUser
-	}
+        #
+        # disable server manager from showing for all future users
+        #
+        REG LOAD HKU\DefaultUser $env:systemdrive\Users\Default\NTUSER.DAT | Out-Null
+        REG ADD "HKU\DefaultUser\Software\Microsoft\ServerManager" /v DoNotOpenServerManagerAtLogon /d 1 /t REG_DWORD /f | Out-Null
+        REG UNLOAD HKU\DefaultUser | Out-Null
+    }
 }
 
 Function Disable-IPv6PrivacyAddresses
 {
-	Write-Output "Disabling privacy IPv6 addresses..."
-	netsh interface ipv6 set privacy state=disabled store=active | Out-Null
-	netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
-	netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
-	netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent | Out-Null
+	if ((netsh interface ipv6 show privacy) -match 'enabled')
+	{
+        Write-Output "Disabling privacy IPv6 addresses..."
+        netsh interface ipv6 set privacy state=disabled store=active | Out-Null
+        netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
+        netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
+        netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent | Out-Null
+	}
 }
 
 Write-Output "Starting standard configuration of Windows Server 2012 R2..."
@@ -208,6 +211,7 @@ Install-7Zip
 Set-StaticIP
 Enable-RDP
 Disable-TaskOffload
+Disable-IPv6PrivacyAddresses
 Enable-SmartScreen
 Set-ComputerName
 Install-Updates
