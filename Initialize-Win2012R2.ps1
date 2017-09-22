@@ -192,14 +192,14 @@ Function Disable-ServerManager
 
 Function Disable-IPv6PrivacyAddresses
 {
-	if ((netsh interface ipv6 show privacy) -match 'enabled')
-	{
+    if ((netsh interface ipv6 show privacy) -match 'enabled')
+    {
         Write-Output "Disabling privacy IPv6 addresses..."
         netsh interface ipv6 set privacy state=disabled store=active | Out-Null
         netsh interface ipv6 set privacy state=disabled store=persistent | Out-Null
         netsh interface ipv6 set global randomizeidentifiers=disabled store=active | Out-Null
         netsh interface ipv6 set global randomizeidentifiers=disabled store=persistent | Out-Null
-	}
+    }
 }
 
 Function Download-DattoWindowsAgent
