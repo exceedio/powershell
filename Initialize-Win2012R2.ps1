@@ -66,6 +66,20 @@ Function Install-7Zip
     }
 }
 
+Function Set-StaticIP
+{
+    if ((Get-NetIPInterface -InterfaceAlias Ethernet -AddressFamily IPv4).Dhcp -eq 'Enabled')
+    {
+        $staticip = Read-Host "Static IP address?"
+        $staticnm = Read-Host "Static subnet prefix length (e.g 24)?"
+        $staticgw = Read-Host "Static default gateway?"
+        $staticns = Read-Host "Static DNS server(s) (comma separated)?"
+        Write-Output "Setting static IP..."
+        New-NetIPAddress -InterfaceAlias Ethernet -AddressFamily IPv4 -IPAddress $staticip -PrefixLength $staticnm -DefaultGateway $staticgw | Out-Null
+        Set-DnsClientServerAddress -InterfaceAlias Ethernet -ServerAddresses $staticns | Out-Null
+    }
+}
+
 Function Set-ComputerName
 {
     if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters')
@@ -187,6 +201,7 @@ Function Disable-IPv6PrivacyAddresses
 
 Write-Output "Starting standard configuration of Windows Server 2012 R2..."
 
+Disable-ServerManager
 Install-NETFramework47
 Install-WMF51
 Install-7Zip
@@ -194,7 +209,6 @@ Set-StaticIP
 Enable-RDP
 Disable-TaskOffload
 Enable-SmartScreen
-Disable-ServerManager
 Set-ComputerName
 Install-Updates
 Activate-Windows
