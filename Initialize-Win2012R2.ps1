@@ -33,6 +33,16 @@ Function Install-NETFramework461
     Remove-Item $exe
 }
 
+Function Install-NETFramework47
+{
+    $url = 'https://download.microsoft.com/download/D/D/3/DD35CC25-6E9C-484B-A746-C5BE0C923290/NDP47-KB3186497-x86-x64-AllOS-ENU.exe'
+    $exe = "$env:windir\temp\NDP47-KB3186497-x86-x64-AllOS-ENU.exe"
+    Invoke-WebRequest $url -OutFile $exe
+    & $exe /q /norestart | Out-Host
+    Remove-Item $exe
+	
+}
+
 Function Install-WMF5
 {
     $url = 'https://download.microsoft.com/download/2/C/6/2C6E1B4A-EBE5-48A6-B225-2D2058A9CEFB/Win8.1AndW2K12R2-KB3134758-x64.msu'
@@ -40,6 +50,16 @@ Function Install-WMF5
     Invoke-WebRequest $url -OutFile $msu
     & wusa.exe $msu /quiet /forcerestart | Out-Host
     Remove-Item $msu
+}
+
+Function Install-WMF51
+{
+    $url = 'https://download.microsoft.com/download/6/F/5/6F5FF66C-6775-42B0-86C4-47D41F2DA187/Win8.1AndW2K12R2-KB3191564-x64.msu'
+    $msu = "$env:windir\temp\Win8.1AndW2K12R2-KB3191564-x64.msu"
+    Invoke-WebRequest $url -OutFile $msu
+    & wusa.exe $msu /quiet /forcerestart | Out-Host
+    Remove-Item $msu
+	
 }
 
 Function Install-7Zip
@@ -99,17 +119,30 @@ REG UNLOAD HKU\DefaultUser
 #
 # install .net 4.6.1 if needed
 #
-if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 394271) {
-    Update-Progress -Status "Installing .NET Framework 4.6.1" -Step 2
-    Install-NETFramework461
+#if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 394271) {
+#    Update-Progress -Status "Installing .NET Framework 4.6.1" -Step 2
+#    Install-NETFramework461
+#}
+
+#
+# install .net 4.7 if needed
+#
+# see https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
+#
+if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full').Release -lt 460805) {
+    Update-Progress -Status "Installing .NET Framework 4.7" -Step 2
+    Install-NETFramework47
 }
 
 #
 # install WMF 5 if needed
 #
-if ($PSVersionTable.PSVersion.Major -lt 5) {
-    Update-Progress -Status "Installing Windows Management Framework 5.0" -Step 3
-    Install-WMF5
+if ($PSVersionTable.PSVersion.Major -ne 5) {
+    Update-Progress -Status "Installing Windows Management Framework 5.1" -Step 3
+    Install-WMF51
+} else if ($PSVersionTable.PSVersion.Minor -ne 1) {
+    Update-Progress -Status "Installing Windows Management Framework 5.1" -Step 3
+    Install-WMF51
 }
 
 #
