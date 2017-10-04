@@ -21,6 +21,6 @@ param (
 )
 
 $date = (Get-Date).ToString('yyyyMMdd')
-$filename = $env:temp\userlistforadupdate-$date.csv
+$filename = "$env:temp\userlistforadupdate-$date.csv"
 Get-ADUser -Filter * -Properties * -SearchBase $SearchBase | ? {$_.UserPrincipalName -ne $null} | Sort UserPrincipalName | Select UserPrincipalName, GivenName, Surname, Title, Organization, Department, Office, EmailAddress, OfficePhone, MobilePhone, HomePhone, Fax, StreetAddress, City, State, PostalCode | Export-Csv $env:temp\Get-UsersForADUpdate.csv -NoTypeInformation
 Write-Output "File has been generated at $filename"
