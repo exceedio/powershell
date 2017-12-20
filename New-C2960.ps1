@@ -8,6 +8,7 @@ $vlan_g     = Read-Host "Guest VLAN (e.g. 200 - leave blank for no guest vlan)"
 $uplink     = Read-Host "Uplink port (e.g. 8)"
 $uplink_eid = Read-Host "EID of device to uplink (e.g. 1234)"
 $core       = Read-Host "Is this the core switch? (y/n)"
+$location   = Read-Host "Location"
 $secret     = Read-Host "Password secret for 'cisco' user"
 $clock      = get-date -Format "HH:mm:ss dd MMM yyyy"
 
@@ -36,6 +37,7 @@ Write-Output "clock timezone PST -8"
 Write-Output "no enable password"
 Write-Output "snmp-server community public"
 Write-Output "snmp-server contact support@exceedio.com"
+Write-Output "snmp-server location $location"
 if ($vlan_v)
 {
     Write-Output "vlan $vlan_v"
@@ -59,7 +61,7 @@ Write-Output "lldp run"
 # default all ports to desktop / phone
 #
 
-Write-Output "interface range GigabitEthernet0/1-$ports"
+Write-Output "interface range GigabitEthernet1/0/1-$ports"
 Write-Output "description desktop / phone"
 Write-Output "switchport mode access"
 Write-Output "switchport access vlan 1"
@@ -67,7 +69,7 @@ if ($vlan_v)
 {
     Write-Output "switchport voice vlan $vlan_v"
 }
-Write-Output "spanning-tree portfast edge"
+Write-Output "spanning-tree portfast"
 Write-Output "auto qos voip cisco-phone"
 Write-Output "exit"
 
