@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Configures Windows Server 2012 R2 to standard.
+    Configures Windows Server 2016 to standard.
 .DESCRIPTION
     Installs 7-Zip
     Sets static IPv4 address
@@ -21,9 +21,9 @@
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-Win2016.ps1 | iex
 .NOTES
-    Filename : Initialize-Win2012R2.ps1
+    Filename : Initialize-Win2016.ps1
     Author   : jreese@exceedio.com
-    Modified : Sep, 21, 2017
+    Modified : Mar, 08, 2018
 #>
 
 Function Install-7Zip
