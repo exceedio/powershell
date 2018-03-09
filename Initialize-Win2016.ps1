@@ -123,7 +123,7 @@ Function Install-Updates
     }
 
     Write-Output "Installing updates and automatically rebooting if needed..."
-    Get-WUInstall -Criteria "IsInstalled = 0 AND BrowseOnly = 0 AND Type = 'Software'" -AutoReboot -AcceptAll
+    Install-WindowsUpdate -Criteria "IsInstalled = 0 AND BrowseOnly = 0 AND Type = 'Software'" -MicrosoftUpdate -AutoReboot -AcceptAll
 }
 
 Function Activate-Windows
