@@ -118,8 +118,8 @@ Function Install-Updates
         Write-Output "Installing Windows Update PowerShell module..."
         Install-Module PSWindowsUpdate -Force
 
-        Write-Output "Enabling Microsoft Update..."
-        Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
+        #Write-Output "Enabling Microsoft Update..."
+        #Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
     }
 
     Write-Output "Installing updates and automatically rebooting if needed..."
