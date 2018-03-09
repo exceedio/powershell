@@ -193,7 +193,7 @@ Function Download-KAgent
     }
 }
 
-Write-Output "Starting standard configuration of Windows Server 2012 R2..."
+Write-Output "Starting standard configuration of Windows Server 2016..."
 
 Disable-ServerManager
 Install-7Zip
