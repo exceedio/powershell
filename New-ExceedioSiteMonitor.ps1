@@ -31,8 +31,13 @@ if (!(Test-Path $Path)) {
 $vm = New-VM -Name $Name -Generation 2 -MemoryStartupBytes $Memory -VHDPath $Path
 $vm | Set-VM -ProcessorCount $ProcessorCount -Notes $Purpose
 $vm | Set-VM -AutomaticStartAction Start -AutomaticStartDelay $StartDelayInSeconds -AutomaticStopAction Shutdown
-$vm | Add-VMDvdDrive | Set-VMDvdDrive -Path $InstallMedia
+$vm | Add-VMDvdDrive
+$vm | Get-VMDvdDrive | Set-VMDvdDrive -Path $InstallMedia
 $vm | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $VirtualSwitchName
 $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
 $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrationService
 $vm | Set-VMFirmware -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name))
+$vm | Set-VMFirmware -EnableSecureBoot Off
+$vm | Start-VM
+
+Write-Output "Create a DHCP reservation for $($vm | Get-VMNetworkAdapter | Select -ExpandProperty MacAddress)"
