@@ -40,4 +40,5 @@ $vm | Set-VMFirmware -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerN
 $vm | Set-VMFirmware -EnableSecureBoot Off
 $vm | Start-VM
 
+Start-Sleep -Seconds 10
 Write-Output "Create a DHCP reservation for $($vm | Get-VMNetworkAdapter | Select -ExpandProperty MacAddress)"
