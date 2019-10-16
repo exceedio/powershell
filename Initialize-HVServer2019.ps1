@@ -83,16 +83,14 @@ function Enable-NICTeaming {
     $nics         = @(Get-NetAdapter)
     $vmswitchname = 'External Virtual Switch'
     $vmteamname   = 'VMTeam'
-    $vmswitchnic  = ''
+    $vmswitchnic  = 'VIC1'
 
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         if ($nics.Length -eq 2) {
-            New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC2 -TeamNicName VIC1 -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
-            $vmswitchnic = 'VIC2'
+            New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC2 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
         }
         if ($nics.Length -eq 4) {
-            New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC3,NIC4 -TeamNicName VIC1 -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
-            $vmswitchnic = 'NIC2'
+            New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC3,NIC4 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
         }
         if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
             if ($vmswitchnic -ne '') {
