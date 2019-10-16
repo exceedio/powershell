@@ -12,10 +12,10 @@
 $Name                = $null
 $Purpose             = $null
 $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks'
-$InstallMedia        = 'SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO'
+$InstallMedia        = 'SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO'
 $InstallMediaPath    = 'C:\Users\Public\Documents\ISO'
 $Memory              = 4GB
-$ProcessorCount      = 2
+$ProcessorCount      = 4
 $VirtualSwitchName   = 'External Virtual Switch'
 $StartDelayInSeconds = 120
 
@@ -36,14 +36,17 @@ $Path = Join-Path $VirtualHardDiskPath "$Name.vhdx"
 if (!(Test-Path $Path)) {
     Optimize-Volume -DriveLetter D -Defrag -Verbose
     Write-Host "Creating fixed size virtual hard disk..."
-    New-VHD -Path $Path -Fixed -SizeBytes 60GB -LogicalSectorSizeBytes 512 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
+    New-VHD -Path $Path -Fixed -SizeBytes 120GB -LogicalSectorSizeBytes 512 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
 }
 
 Write-Host "Creating virtual machine..."
-$vm = New-VM -Name $Name -Generation 1 -MemoryStartupBytes $Memory -VHDPath $Path
+$vm = New-VM -Name $Name -Generation 2 -MemoryStartupBytes $Memory -VHDPath $Path
 $vm | Set-VM -ProcessorCount $ProcessorCount -Notes $Purpose
 $vm | Set-VM -AutomaticStartAction Start -AutomaticStartDelay $StartDelayInSeconds -AutomaticStopAction Shutdown
-$vm | Get-VMDvdDrive | Set-VMDvdDrive -Path (Join-Path $InstallMediaPath $InstallMedia)
+$vm | Add-VMDvdDrive -ControllerNumber 0 -Path (Join-Path $InstallMediaPath $InstallMedia)
 $vm | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $VirtualSwitchName
 $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
 $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrationService
+
+Write-Host "Setting boot order to enable DVD boot..."
+Set-VMFirmware -VMName $Name -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name))
