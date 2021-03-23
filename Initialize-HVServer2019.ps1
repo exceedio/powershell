@@ -1,16 +1,16 @@
 <#
 .SYNOPSIS
-    Initializes a Dell server running Hyper-V Server 2016
+    Initializes a Dell server running Hyper-V Server 2019
 .DESCRIPTION
-    Prepares a fresh installation of Hyper-V Server 2016 on a Dell PowerEdge Rxxx server.
+    Prepares a fresh installation of Hyper-V Server 2019 on a Dell PowerEdge Rxxx server.
     This scripts makes a lot of assumptions about how you want your Hyper-V parent to be
     configured. Do not blindly run this script.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2016.ps1 -UseBasicParsing | iex
+    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2019.ps1 -UseBasicParsing | iex
 .NOTES
-    Filename : Initialize-HVServer2016.ps1
+    Filename : Initialize-HVServer2019.ps1
     Author   : jreese@exceedio.com
-    Modified : Nov, 10, 2016
+    Modified : Mar 23, 2021
 #>
 
 function Enable-WindowsFirewall {
@@ -18,18 +18,18 @@ function Enable-WindowsFirewall {
 }
 
 function Enable-SnmpService {
-    if ((Get-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0).State -neq Installed) {
+    if ((Get-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0).State -ne 'Installed') {
         Add-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0
     }
 }
 
 function Disable-PrinterMapping {
-    if (!(Test-Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services')) {
-        New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
+    $terminalServicesRegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
+    if (!(Test-Path $terminalServicesRegKey)) {
+        New-Item -Path $terminalServicesRegKey -ErrorAction SilentlyContinue
     }
-    if ((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services').fDisableCpm -ne 1) {
-        New-Item -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -ErrorAction SilentlyContinue
-        Set-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Name 'fDisableCpm' -Value 1 -Type DWord -Force
+    if ((Get-ItemProperty -Path $terminalServicesRegKey).fDisableCpm -ne 1) {
+        Set-ItemProperty -Path $terminalServicesRegKey -Name 'fDisableCpm' -Value 1 -Type DWord -Force
     }
 }
 
@@ -104,31 +104,58 @@ function Disable-VirtualMachineQueue {
     #
     # prevents known problems with Broadcom network adapters
     #
-    if (Get-NetAdapterVmq | where Enabled -eq $true) {
+    if (Get-NetAdapterVmq | Where-Object Enabled -eq $true) {
         Get-NetAdapter | Set-NetAdapterVmq -Enabled $false -ErrorAction SilentlyContinue
     }
 }
 
 function Enable-TimeSynchronization {
-    if ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -notmatch 'time.google.com') {
+    $timeserver = 'time.google.com'
+    if ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -notmatch $timeserver) {
         sc.exe config W32Time start= auto | Out-Null
         sc.exe start W32Time | Out-Null
-        w32tm.exe /config /manualpeerlist:"time.google.com" /syncfromflags:manual /update | Out-Null
+        w32tm.exe /config /manualpeerlist:"$timeserver" /syncfromflags:manual /update | Out-Null
     }
 }
 
 function Install-OMSA {
     if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*') {
-        Invoke-WebRequest https://downloads.dell.com/FOLDER05558179M/1/OM-SrvAdmin-Dell-Web-WINX64-9.3.0-3465_A00.exe -OutFile $env:temp\OM-SrvAdmin-Dell-Web-WINX64-9.3.0-3465_A00.exe
-        $env:temp\OM-SrvAdmin-Dell-Web-WINX64-9.3.0-3465_A00.exe /auto $env:temp\OMSA
-        msiexec.exe /i "$env:temp\OMSA\windows\SystemsManagementx64\SysMgmtx64.msi" /qb /norestart
+        #
+        # install omsa
+        #
+        $dellOmsaExeUrl = "https://dl.dell.com/FOLDER06454068M/1/OM-SrvAdmin-Dell-Web-WINX64-9.5.0-4063_A00.exe"
+        $dellOmsaMspUrl = "https://dl.dell.com/FOLDER07057950M/1/SysMgmt_9501_x64_patch_A00.msp"
+        $dellOmsaPath   = Join-Path $env:temp "omsa"
+        $dellOmsaExe    = Join-Path $dellOmsaPath "OM-SrvAdmin-Dell-Web-WINX64-Latest.exe"
+        $dellOmsaMsi    = Join-Path $dellOmsaPath "windows\SystemsManagementx64\SysMgmtx64.msi"
+        $dellOmsaMsp    = Join-Path $dellOmsaPath "SysMgmt-Latest.msp"
+        Start-BitsTransfer -Source $dellOmsaExeUrl -Destination $dellOmsaExe
+        Start-Process -FilePath $dellOmsaExe -ArgumentList @("/auto","$dellOmsaPath") -Wait -NoNewWindow
+        Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$dellOmsaMsi","/qb","/norestart") -Wait -NoNewWindow
+
+        #
+        # install latest patch if there is one
+        #
+        if ($dellOmsaMspUrl) {
+            Start-BitsTransfer -Source $dellOmsaMspUrl -Destination $dellOmsaMsp
+            Start-Process -FilePath "msiexec.exe" -ArgumentList @("/update","$dellOmsaMsp","/qb","/norestart")
+        }
+
+        #
+        # secure the omsa web server
+        #
+        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
+        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
+
+        #
+        # create a windows firewall rule to allow access
+        #
+        $displayName = "OpenManage"
+        if (!(Get-NetFirewallRule -DisplayName $displayName -ErrorAction SilentlyContinue)) {
+            New-NetFirewallRule -DisplayName $displayName -Direction Inbound -LocalPort 1311 -Protocol TCP -Action Allow
+        }
     }
-    if (!(Get-NetFirewallRule -DisplayName "OpenManage" -ErrorAction SilentlyContinue)) {
-        New-NetFirewallRule -DisplayName "OpenManage" -Direction Inbound -LocalPort 1311 -Protocol TCP -Action Allow
-    }
-    & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-    & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
-	& "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
 }
 
 function Install-FiveNineManager {
@@ -136,7 +163,7 @@ function Install-FiveNineManager {
     & msiexec.exe /i "$env:temp\59Manager.msi" /qb /norestart
 }
 
-function Download-InstallMedia {
+function Get-InstallMedia {
     if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
         New-Item -Path 'C:\Users\Public\Documents\ISO' -ItemType Directory -Force | Out-Null
     }
@@ -174,7 +201,6 @@ $Netmask = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
 $Gateway = Read-Host "What is the desired iDRAC gateway (e.g. 192.168.0.1)?"
 $Password = Read-Host "What is the Dell iDRAC password?"
 
-
 Enable-SnmpService
 Disable-PrinterMapping
 Enable-RDP
@@ -186,7 +212,7 @@ Disable-VirtualMachineQueue
 Install-OMSA
 Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
 Install-FiveNineManager
-Download-InstallMedia
+Get-InstallMedia
 Enable-WindowsFirewall
 
 #
