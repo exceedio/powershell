@@ -13,11 +13,6 @@
     Modified : Mar 23, 2021
 #>
 
-function Enable-WindowsFirewall {
-    Write-Output "Enabling Windows Firewall..."
-    Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True | Out-Null
-}
-
 function Enable-SnmpService {
     Write-Output "Enabling SNMP client..."
     if ((Get-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0).State -ne 'Installed') {
@@ -57,7 +52,7 @@ function Disable-NetOffloadGlobalSettingTaskOffload {
 function Set-DvdRomDriveLetter {
     Write-Output "Changing drive letter on CD-ROM..."
     $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5'
-    if (!($cdrom)) {
+    if ($cdrom) {
         $cdrom.DriveLetter = 'Z:'
         $cdrom.Put() | Out-Null
     }
@@ -194,14 +189,6 @@ function Get-InstallMedia {
     #Invoke-WebRequest https://exdo.blob.core.windows.net/public/iso/SW_DVD9_Win_Pro_10_1903_64BIT_English_Pro_Ent_EDU_N_MLF_X22-02890.ISO -OutFile 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Pro_10_1903_64BIT_English_Pro_Ent_EDU_N_MLF_X22-02890.ISO'
 }
 
-function Set-ComputerName {
-    Write-Output "Setting computer name and restarting..."
-    $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
-    if ($env:computername -ne $newname) {
-        Rename-Computer -NewName $newname -Restart
-    }
-}
-
 function Enable-iDRAC {
     param (
         $Address,
@@ -220,6 +207,18 @@ function Enable-iDRAC {
         racadm set iDRAC.Nic.VLanID $VlanId | Out-Null
         racadm set iDRAC.Nic.VLanEnable 1 | Out-Null
         racadm set iDRAC.Users.2.Password $Password | Out-Null
+    }
+}
+function Enable-WindowsFirewall {
+    Write-Output "Enabling Windows Firewall..."
+    Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True | Out-Null
+}
+
+function Set-ComputerName {
+    Write-Output "Setting computer name and restarting..."
+    $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
+    if ($env:computername -ne $newname) {
+        Rename-Computer -NewName $newname -Restart
     }
 }
 
@@ -246,11 +245,11 @@ Disable-VirtualMachineQueue
 pause
 Install-OMSA
 pause
-Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
-pause
 Install-FiveNineManager
 pause
 Enable-TimeSynchronization
+pause
+Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
 pause
 Get-InstallMedia
 pause
