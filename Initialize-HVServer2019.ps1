@@ -87,6 +87,7 @@ function Enable-NICTeaming {
         if ($nic.Name -ne $name) {
             Rename-NetAdapter -Name $nic.Name -NewName $name   
         }
+        $nicnumber = $nicnumber + 1
     }
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         if ($nics.Length -eq 2) {
