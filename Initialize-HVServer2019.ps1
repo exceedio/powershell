@@ -124,7 +124,7 @@ function Disable-VirtualMachineQueue {
 }
 
 function Enable-TimeSynchronization {
-    Write-Output "Enabling time synchroization with Google..."
+    Write-Output "Enabling time synchronization with Google..."
     $timeserver = 'time.google.com'
     if ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -notmatch $timeserver) {
         sc.exe config W32Time start= auto | Out-Null
@@ -143,13 +143,13 @@ function Install-OMSA {
         $dellOmsaMspUrl = "https://dl.dell.com/FOLDER07057950M/1/SysMgmt_9501_x64_patch_A00.msp"
         $dellOmsaPath   = Join-Path $env:temp "omsa"
         $dellOmsaExe    = Join-Path $dellOmsaPath "OM-SrvAdmin-Dell-Web-WINX64-Latest.exe"
-        $dellOmsaMsi    = Join-Path $dellOmsaPath "windows\SystemsManagementx64\SysMgmtx64.msi"
+        $dellOmsaMsi    = Join-Path "C:\OpenManage" "windows\SystemsManagementx64\SysMgmtx64.msi"
         $dellOmsaMsp    = Join-Path $dellOmsaPath "SysMgmt-Latest.msp"
         if (-not (Test-Path $dellOmsaPath)) {
             New-Item -Path $dellOmsaPath -ItemType Directory -Force | Out-Null
         }
         Start-BitsTransfer -Source $dellOmsaExeUrl -Destination $dellOmsaExe
-        Start-Process -FilePath $dellOmsaExe -ArgumentList @("/auto","$dellOmsaPath") -Wait -NoNewWindow
+        Start-Process -FilePath $dellOmsaExe -ArgumentList @("/auto") -Wait -NoNewWindow
         Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$dellOmsaMsi","/qb","/norestart") -Wait -NoNewWindow
 
         #
@@ -204,7 +204,7 @@ function Set-ComputerName {
 
 function Enable-iDRAC {
     Write-Output "Configuring iDRAC..."
-    param (
+    params (
         $Address,
         $Netmask,
         $Gateway,
