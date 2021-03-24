@@ -94,6 +94,7 @@ function Enable-NICTeaming {
         }
         $nicnumber = $nicnumber + 1
     }
+    Write-Output "Creating network team for virtual machines..."
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         if ($nics.Length -eq 2) {
             New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC2 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
@@ -107,6 +108,7 @@ function Enable-NICTeaming {
             Disable-NetAdapter -Name NIC2 -Confirm:$false
         }
     }
+    Write-Output "Creating virtual switch..."
     if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
         if ($vmswitchnic -ne '') {
             New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
@@ -143,6 +145,9 @@ function Install-OMSA {
         $dellOmsaExe    = Join-Path $dellOmsaPath "OM-SrvAdmin-Dell-Web-WINX64-Latest.exe"
         $dellOmsaMsi    = Join-Path $dellOmsaPath "windows\SystemsManagementx64\SysMgmtx64.msi"
         $dellOmsaMsp    = Join-Path $dellOmsaPath "SysMgmt-Latest.msp"
+        if (-not (Test-Path $dellOmsaPath)) {
+            New-Item -Path $dellOmsaPath -ItemType Directory -Force | Out-Null
+        }
         Start-BitsTransfer -Source $dellOmsaExeUrl -Destination $dellOmsaExe
         Start-Process -FilePath $dellOmsaExe -ArgumentList @("/auto","$dellOmsaPath") -Wait -NoNewWindow
         Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$dellOmsaMsi","/qb","/norestart") -Wait -NoNewWindow
@@ -174,7 +179,7 @@ function Install-OMSA {
 
 function Install-FiveNineManager {
     Write-Output "Installing 5Nine Manager..."
-    Invoke-WebRequest https://exdo.blob.core.windows.net/public/59Manager.msi -OutFile "$env:temp\59Manager.msi"
+    Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow
 }
 
