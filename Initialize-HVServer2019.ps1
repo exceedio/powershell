@@ -203,14 +203,14 @@ function Set-ComputerName {
 }
 
 function Enable-iDRAC {
-    Write-Output "Configuring iDRAC..."
-    params (
+    param (
         $Address,
         $Netmask,
         $Gateway,
         $Password,
         $VlanId = 64
     )
+    Write-Output "Configuring iDRAC..."
     if (Test-Path "$env:programfiles\Dell\SysMgt\idrac\racadm.exe") {
         racadm set iDRAC.IPv4.Address $Address | Out-Null
         racadm set iDRAC.IPv4.Netmask $Netmask | Out-Null
