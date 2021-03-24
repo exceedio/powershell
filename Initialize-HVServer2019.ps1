@@ -62,11 +62,7 @@ function Set-DvdRomDriveLetter {
 
 function Set-DataVolume {
     if (!(Get-Volume -FileSystemLabel Data -ErrorAction SilentlyContinue)) {
-        #Write-Warning "Preparing data volume"
-        #Get-Partition | Sort-Object Size | Select-Object -Last 1 | Format-Volume -AllocationUnitSize 65536 -FileSystem NTFS -NewFileSystemLabel 'Data' -ShortFileNameSupport $false -Confirm
-        #Get-Partition | Sort-Object Size | Select-Object -Last 1 | Set-Partition -NewDriveLetter 'D'
-        Write-Warning "Use Get-Partition | Format-Volume -AllocationUnitSize 65536 -FileSystem NTFS -NewFileSystemLabel 'Data' -ShortFileNameSupport `$false to format data volume"
-        pause
+        Get-Disk | Sort-Object 'Total Size' | Select-Object -Last 1 | New-Partition -UseMaximumSize -DriveLetter D | Format-Volume -FileSystem ReFS -NewFileSystemLabel 'Data' -Confirm:$false
     }
     if ((Get-VMHost).VirtualHardDiskPath -ne 'D:\Hyper-V\Virtual Hard Disks') {
         Set-VMHost -VirtualHardDiskPath 'D:\Hyper-V\Virtual Hard Disks'
@@ -80,25 +76,34 @@ function Set-DataVolume {
 }
 
 function Enable-NICTeaming {
-    $nics         = @(Get-NetAdapter)
+    $nics         = @(Get-NetAdapter | Sort-Object Name)
     $vmswitchname = 'External Virtual Switch'
     $vmteamname   = 'VMTeam'
     $vmswitchnic  = 'VIC1'
+    $nicnumber    = 1
 
+    foreach ($nic in $nics) {
+        $name = "NIC$nicnumber"
+        if ($nic.Name -ne $name) {
+            Rename-NetAdapter -Name $nic.Name -NewName $name   
+        }
+    }
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         if ($nics.Length -eq 2) {
             New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC2 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
         }
         if ($nics.Length -eq 4) {
             New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC3,NIC4 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
+            Disable-NetAdapter -Name NIC2 -Confirm:$false
         }
         if ($nics.Length -eq 6) {
             New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC3,NIC4,NIC5,NIC6 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
+            Disable-NetAdapter -Name NIC2 -Confirm:$false
         }
-        if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
-            if ($vmswitchnic -ne '') {
-                New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
-            }
+    }
+    if ((Get-VMSwitch).Name -notcontains $vmswitchname) {
+        if ($vmswitchnic -ne '') {
+            New-VMSwitch -Name $vmswitchname -NetAdapterName $vmswitchnic -AllowManagementOS 0 | Out-Null
         }
     }
 }
