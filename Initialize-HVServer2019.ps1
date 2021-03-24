@@ -14,16 +14,19 @@
 #>
 
 function Enable-WindowsFirewall {
-    Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+    Write-Output "Enabling Windows Firewall..."
+    Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True | Out-Null
 }
 
 function Enable-SnmpService {
+    Write-Output "Enabling SNMP client..."
     if ((Get-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0).State -ne 'Installed') {
-        Add-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0
+        Add-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0 | Out-Null
     }
 }
 
 function Disable-PrinterMapping {
+    Write-Output "Disabling printer mapping..."
     $terminalServicesRegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
     if (!(Test-Path $terminalServicesRegKey)) {
         New-Item -Path $terminalServicesRegKey -ErrorAction SilentlyContinue
@@ -34,6 +37,7 @@ function Disable-PrinterMapping {
 }
 
 function Enable-RDP {
+    Write-Output "Enabling remote desktop..."
     if ((Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server').fDenyTSConnections -ne 0) {
         Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0 -Type DWord -Force
     }
@@ -44,15 +48,14 @@ function Enable-RDP {
 }
 
 function Disable-NetOffloadGlobalSettingTaskOffload {
-    #
-    # prevents known problems with Broadcom network adapters
-    #
+    Write-Output "Disabling net offload global to prevent Broadcom bugs..."
     if ((Get-NetOffloadGlobalSetting).TaskOffload -ne 'Disabled') {
         Set-NetOffloadGlobalSetting -TaskOffload Disabled
     }
 }
 
 function Set-DvdRomDriveLetter {
+    Write-Output "Changing drive letter on CD-ROM..."
     $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5'
     if (!($cdrom)) {
         $cdrom.DriveLetter = 'Z:'
@@ -61,8 +64,9 @@ function Set-DvdRomDriveLetter {
 }
 
 function Set-DataVolume {
+    Write-Output "Creating Data volume..."
     if (!(Get-Volume -FileSystemLabel Data -ErrorAction SilentlyContinue)) {
-        Get-Disk | Sort-Object 'Total Size' | Select-Object -Last 1 | New-Partition -UseMaximumSize -DriveLetter D | Format-Volume -FileSystem ReFS -NewFileSystemLabel 'Data' -Confirm:$false
+        Get-Disk | Sort-Object 'Total Size' | Select-Object -Last 1 | New-Partition -UseMaximumSize -DriveLetter D | Format-Volume -FileSystem ReFS -NewFileSystemLabel 'Data' -Confirm:$false | Out-Null
     }
     if ((Get-VMHost).VirtualHardDiskPath -ne 'D:\Hyper-V\Virtual Hard Disks') {
         Set-VMHost -VirtualHardDiskPath 'D:\Hyper-V\Virtual Hard Disks'
@@ -82,10 +86,11 @@ function Enable-NICTeaming {
     $vmswitchnic  = 'VIC1'
     $nicnumber    = 1
 
+    Write-Output "Renaming network adapters..."
     foreach ($nic in $nics) {
         $name = "NIC$nicnumber"
         if ($nic.Name -ne $name) {
-            Rename-NetAdapter -Name $nic.Name -NewName $name   
+            Rename-NetAdapter -Name $nic.Name -NewName $name | Out-Null   
         }
         $nicnumber = $nicnumber + 1
     }
@@ -110,15 +115,14 @@ function Enable-NICTeaming {
 }
 
 function Disable-VirtualMachineQueue {
-    #
-    # prevents known problems with Broadcom network adapters
-    #
+    Write-Output "Disabling VMQ to avoid problems with Broadcom..."
     if (Get-NetAdapterVmq | Where-Object Enabled -eq $true) {
         Get-NetAdapter | Set-NetAdapterVmq -Enabled $false -ErrorAction SilentlyContinue
     }
 }
 
 function Enable-TimeSynchronization {
+    Write-Output "Enabling time synchroization with Google..."
     $timeserver = 'time.google.com'
     if ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -notmatch $timeserver) {
         sc.exe config W32Time start= auto | Out-Null
@@ -128,6 +132,7 @@ function Enable-TimeSynchronization {
 }
 
 function Install-OMSA {
+    Write-Output "Installing Dell OpenManage Server Administrator if needed..."
     if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*') {
         #
         # install omsa
@@ -168,11 +173,13 @@ function Install-OMSA {
 }
 
 function Install-FiveNineManager {
+    Write-Output "Installing 5Nine Manager..."
     Invoke-WebRequest https://exdo.blob.core.windows.net/public/59Manager.msi -OutFile "$env:temp\59Manager.msi"
     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow
 }
 
 function Get-InstallMedia {
+    Write-Output "Downloading Windows installation media..."
     if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
         New-Item -Path 'C:\Users\Public\Documents\ISO' -ItemType Directory -Force | Out-Null
     }
@@ -183,6 +190,7 @@ function Get-InstallMedia {
 }
 
 function Set-ComputerName {
+    Write-Output "Setting computer name and restarting..."
     $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
     if ($env:computername -ne $newname) {
         Rename-Computer -NewName $newname -Restart
@@ -190,6 +198,7 @@ function Set-ComputerName {
 }
 
 function Enable-iDRAC {
+    Write-Output "Configuring iDRAC..."
     param (
         $Address,
         $Netmask,
