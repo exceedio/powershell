@@ -160,7 +160,7 @@ function Install-OMSA {
         #
         & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
         & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
-        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
+        # & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
 
         #
         # create a windows firewall rule to allow access
@@ -180,13 +180,18 @@ function Install-FiveNineManager {
 
 function Get-InstallMedia {
     Write-Output "Downloading Windows installation media..."
-    if (!(Test-Path 'C:\Users\Public\Documents\ISO')) {
-        New-Item -Path 'C:\Users\Public\Documents\ISO' -ItemType Directory -Force | Out-Null
+    $filenames = @(
+        'SW_DVD9_Win_Pro_10_20H2.5_64BIT_English_Pro_Ent_EDU_N_MLF_X22-55724.ISO',
+        'SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO'
+    )
+    $path = 'C:\Users\Public\Documents\ISO'
+    if (!(Test-Path $path)) {
+        New-Item -Path $path -ItemType Directory -Force | Out-Null
     }
-    Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/iso/SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO' -Destination 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO'
-    #Invoke-WebRequest https://exdo.blob.core.windows.net/public/iso/SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO -OutFile 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Server_STD_CORE_2016_64Bit_English_-4_DC_STD_MLF_X21-70526.ISO'
-    #Invoke-WebRequest https://exdo.blob.core.windows.net/public/iso/SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO -OutFile 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO'
-    #Invoke-WebRequest https://exdo.blob.core.windows.net/public/iso/SW_DVD9_Win_Pro_10_1903_64BIT_English_Pro_Ent_EDU_N_MLF_X22-02890.ISO -OutFile 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Pro_10_1903_64BIT_English_Pro_Ent_EDU_N_MLF_X22-02890.ISO'
+    foreach ($filename in $filenames)
+    {
+        Start-BitsTransfer -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" -Destination (Join-Path $path $filename)
+    }
 }
 
 function Enable-iDRAC {
@@ -194,7 +199,7 @@ function Enable-iDRAC {
         $Address,
         $Netmask,
         $Gateway,
-        $Password,
+        [securestring] $Password,
         $VlanId = 64
     )
     Write-Output "Configuring iDRAC..."
@@ -206,7 +211,7 @@ function Enable-iDRAC {
         racadm set iDRAC.IPv4.DNS2 8.8.4.4 | Out-Null
         racadm set iDRAC.Nic.VLanID $VlanId | Out-Null
         racadm set iDRAC.Nic.VLanEnable 1 | Out-Null
-        racadm set iDRAC.Users.2.Password $Password | Out-Null
+        racadm set iDRAC.Users.2.Password ((New-Object PSCredential "root",$password).GetNetworkCredential().Password) | Out-Null
     }
 }
 function Enable-WindowsFirewall {
@@ -225,36 +230,22 @@ function Set-ComputerName {
 $Address = Read-Host "What is the desired iDRAC address (e.g. 10.60.64.2)?"
 $Netmask = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
 $Gateway = Read-Host "What is the desired iDRAC gateway (e.g. 10.60.64.1)?"
-$Password = Read-Host "What is the Dell iDRAC password?"
+$Password = Read-Host "What is the Dell iDRAC password?" -AsSecureString
 
 Enable-SnmpService
-pause
 Disable-PrinterMapping
-pause
 Enable-RDP
-pause
 Disable-NetOffloadGlobalSettingTaskOffload
-pause
 Set-DvdRomDriveLetter
-pause
 Set-DataVolume
-pause
 Enable-NICTeaming
-pause
 Disable-VirtualMachineQueue
-pause
 Install-OMSA
-pause
 Install-FiveNineManager
-pause
 Enable-TimeSynchronization
-pause
 Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
-pause
 Get-InstallMedia
-pause
 Enable-WindowsFirewall
-pause
 
 #
 # this last function restarts the computer
