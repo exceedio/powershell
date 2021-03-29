@@ -248,7 +248,7 @@ function Set-ComputerName {
     Write-Output "Setting computer name and restarting (if needed)..."
     $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
     if ($env:computername -ne $newname) {
-        Rename-Computer -NewName $newname -Restart
+        Rename-Computer -NewName $newname -Restart -Confirm:$true
     }
 }
 
