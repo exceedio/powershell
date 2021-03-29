@@ -233,11 +233,11 @@ function Test-StorageSpeed {
 }
 
 function Install-Kaseya {
-    Write-Output "Installing Kaseya (if needed)..."
+    Write-Output "Installing Kaseya (will take at least 10 minutes - if needed)..."
     if (-not (Test-Path "$env:ProgramFiles\Kaseya")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
         #Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
-        Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -Wait -NoNewWindow
+        Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -NoNewWindow
         Write-Output "Waiting 10 minutes for Kaseya to finish initial work..."
         Start-Sleep -Seconds 600
     }
