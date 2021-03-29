@@ -167,7 +167,7 @@ function Install-OMSA {
         #
         $displayName = "OpenManage"
         if (!(Get-NetFirewallRule -DisplayName $displayName -ErrorAction SilentlyContinue)) {
-            New-NetFirewallRule -DisplayName $displayName -Direction Inbound -LocalPort 1311 -Protocol TCP -Action Allow
+            New-NetFirewallRule -DisplayName $displayName -Direction Inbound -LocalPort 1311 -Protocol TCP -Action Allow | Out-Null
         }
     }
 }
