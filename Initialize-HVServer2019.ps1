@@ -239,7 +239,7 @@ function Install-Kaseya {
     if (-not (Test-Path "${env:ProgramFiles(x86)}\Kaseya")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
         Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -NoNewWindow
-        Write-Output "Waiting 10 minutes for Kaseya to finish initial work (started ${Get-Date})..."
+        Write-Output "Waiting 10 minutes for Kaseya to finish initial work (started $(Get-Date))..."
         Start-Sleep -Seconds 600
     }
 }
