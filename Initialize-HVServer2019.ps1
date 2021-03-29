@@ -158,12 +158,13 @@ function Install-OMSA {
         #
         # secure the omsa web server
         #
-        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
-        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
         $omconfig = "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe"
         Start-Process -FilePath $omconfig -ArgumentList @("preferences","webserver","attribute=ciphers","setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
         Start-Process -FilePath $omconfig -ArgumentList @("preferences", "webserver","attribute=sslprotocol","setting=TLSv1.2") -Wait -NoNewWindow
+
+        # configure bios settings
+        Start-Process -FilePath $omconfig -ArgumentList @("chassis","biossetup","attribute=ErrPrompt","setting=Disabled") -Wait -NoNewWindow
+        Start-Process -FilePath $omconfig -ArgumentList @("chassis","biossetup","attribute=AcPwrRcvry","setting=On") -Wait -NoNewWindow
 
         #
         # create a windows firewall rule to allow access
@@ -248,8 +249,15 @@ function Set-ComputerName {
     Write-Output "Setting computer name and restarting (if needed)..."
     $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
     if ($env:computername -ne $newname) {
-        Rename-Computer -NewName $newname -Restart -Confirm:$true
+        #Rename-Computer -NewName $newname -Restart -Confirm:$true
+        Rename-Computer -NewName $newname -Confirm:$false
     }
+}
+
+function Install-Updates {
+    Write-Output "Installing updates for Windows..."
+    $updates = Start-WUScan -SearchCriteria "Type='Software' AND IsInstalled=0"
+    Install-WUUpdates -Updates $updates
 }
 
 if ((Read-Host 'Do you need to (re)configure iDRAC? [y/n]' ).ToLowerInvariant() -eq 'y') {
@@ -259,6 +267,7 @@ if ((Read-Host 'Do you need to (re)configure iDRAC? [y/n]' ).ToLowerInvariant() 
     $Password = Read-Host "iDRAC root password" -AsSecureString
 }
 
+Set-ComputerName
 Enable-SnmpService
 Disable-PrinterMapping
 Enable-RDP
@@ -275,8 +284,8 @@ Get-InstallMedia
 Enable-WindowsFirewall
 Test-StorageSpeed
 Install-Kaseya
+Install-Updates
 
 #
 # this last function restarts the computer
 #
-Set-ComputerName
