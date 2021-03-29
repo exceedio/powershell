@@ -10,7 +10,7 @@
 .NOTES
     Filename : Initialize-HVServer2019.ps1
     Author   : jreese@exceedio.com
-    Modified : Mar 23, 2021
+    Modified : Mar 29, 2021
 #>
 
 function Enable-SnmpService {
@@ -175,8 +175,9 @@ function Install-OMSA {
 function Install-FiveNineManager {
     Write-Output "Installing 5Nine Manager (if needed)..."
     if (-not (Test-Path 'C:\Program Files\5nine\5nine Manager')) {
-        Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
-        Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
+        $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
+        #Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
+        Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","${usb}:\init\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
     }
 }
 
@@ -218,17 +219,25 @@ function Enable-iDRAC {
         racadm set iDRAC.Users.2.Password ((New-Object PSCredential "root",$password).GetNetworkCredential().Password) | Out-Null
     }
 }
+
 function Enable-WindowsFirewall {
     Write-Output "Enabling Windows Firewall..."
     Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True | Out-Null
 }
 
+function Test-StorageSpeed {
+    Write-Output "Testing storage speed for 5 minutes..."
+    $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
+    Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("/S","-r","-w30","-d300","-W10","-b8k","-t24","-o12","-h","-L","-Z1M","-c64G", "D:\diskspd.dat") -Wait -NoNewWindow
+}
+
 function Install-Kaseya {
     Write-Output "Installing Kaseya (if needed)..."
     if (-not (Test-Path "$env:ProgramFiles\Kaseya")) {
-        Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
-        Start-Process -FilePath "$env:TEMP\KcsSetup.exe" -ArgumentList @("/S") -Wait -NoNewWindow
-        Write-Output "Waiting 10 minutes for Kaseya to finish initial audit..."
+        $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
+        #Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
+        Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -Wait -NoNewWindow
+        Write-Output "Waiting 10 minutes for Kaseya to finish initial work..."
         Start-Sleep -Seconds 600
     }
 }
@@ -262,6 +271,7 @@ Enable-TimeSynchronization
 Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
 Get-InstallMedia
 Enable-WindowsFirewall
+Test-StorageSpeed
 Install-Kaseya
 
 #
