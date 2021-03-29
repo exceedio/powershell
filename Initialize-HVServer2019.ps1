@@ -176,7 +176,6 @@ function Install-FiveNineManager {
     Write-Output "Installing 5Nine Manager (if needed)..."
     if (-not (Test-Path "$env:ProgramFiles\5nine\5nine Manager")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
-        #Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
         Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","${usb}:\init\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
     }
 }
@@ -228,15 +227,13 @@ function Enable-WindowsFirewall {
 function Test-StorageSpeed {
     Write-Output "Testing storage speed for 5 minutes..."
     $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
-    Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("-r","-w30","-d300","-W10","-b8k","-t24","-o12","-Sh","-L","-Z1M","-c64G", "D:\diskspd.dat") -Wait -NoNewWindow
-    Start-Process -FilePath "notepad.exe" -ArgumentList "$env:TEMP\diskspd.txt" -Wait -NoNewWindow
+    Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("-r","-w30","-d300","-W10","-b8k","-t24","-o12","-Sh","-L","-Z1M","-c64G", "D:\diskspd.dat") -RedirectStandardOutput "diskspd.txt" -Wait -NoNewWindow
 }
 
 function Install-Kaseya {
     Write-Output "Installing Kaseya (will take at least 10 minutes - if needed)..."
     if (-not (Test-Path "${env:ProgramFiles(x86)}\Kaseya")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
-        #Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
         Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -NoNewWindow
         Write-Output "Waiting 10 minutes for Kaseya to finish initial work..."
         Start-Sleep -Seconds 600
