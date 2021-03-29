@@ -158,9 +158,12 @@ function Install-OMSA {
         #
         # secure the omsa web server
         #
-        & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-        & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
-        # & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
+        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
+        #& "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
+        $omconfig = "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe"
+        Start-Process -FilePath $omconfig -ArgumentList @("preferences","webserver","attribute=ciphers","setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
+        Start-Process -FilePath $omconfig -ArgumentList @("preferences", "webserver","attribute=sslprotocol","setting=TLSv1.2") -Wait -NoNewWindow
 
         #
         # create a windows firewall rule to allow access
@@ -232,11 +235,11 @@ function Test-StorageSpeed {
 }
 
 function Install-Kaseya {
-    Write-Output "Installing Kaseya (will take at least 10 minutes - if needed)..."
+    Write-Output "Installing Kaseya (if needed)..."
     if (-not (Test-Path "${env:ProgramFiles(x86)}\Kaseya")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
         Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -NoNewWindow
-        Write-Output "Waiting 10 minutes for Kaseya to finish initial work..."
+        Write-Output "Waiting 10 minutes for Kaseya to finish initial work (started ${Get-Date})..."
         Start-Sleep -Seconds 600
     }
 }
