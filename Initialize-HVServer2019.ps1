@@ -45,14 +45,14 @@ function Enable-RDP {
 function Disable-NetOffloadGlobalSettingTaskOffload {
     Write-Output "Disabling net offload global to prevent Broadcom bugs..."
     if ((Get-NetOffloadGlobalSetting).TaskOffload -ne 'Disabled') {
-        Set-NetOffloadGlobalSetting -TaskOffload Disabled
+        Set-NetOffloadGlobalSetting -TaskOffload Disabled | Out-Null
     }
 }
 
 function Set-DvdRomDriveLetter {
     Write-Output "Changing drive letter on CD-ROM..."
     $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5'
-    if ($cdrom) {
+    if ($cdrom -and ($cdrom.DriveLetter -ne 'Z:')) {
         $cdrom.DriveLetter = 'Z:'
         $cdrom.Put() | Out-Null
     }
@@ -81,17 +81,17 @@ function Enable-NICTeaming {
     $vmswitchnic  = 'VIC1'
     $nicnumber    = 1
 
-    Write-Output "Renaming network adapters..."
-    foreach ($nic in $nics) {
-        $name = "NIC$nicnumber"
-        if ($nic.Name -ne $name) {
-            Rename-NetAdapter -Name $nic.Name -NewName $name | Out-Null   
-        }
-        $nicnumber = $nicnumber + 1
-    }
     Write-Output "Creating network team for virtual machines..."
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
-        if ($nics.Length -eq 2) {
+        Write-Output "Renaming network adapters..."
+        foreach ($nic in $nics) {
+            $name = "NIC$nicnumber"
+            if ($nic.Name -ne $name) {
+                Rename-NetAdapter -Name $nic.Name -NewName $name | Out-Null   
+            }
+            $nicnumber = $nicnumber + 1
+        }
+            if ($nics.Length -eq 2) {
             New-NetLbfoTeam -Name $vmteamname -TeamMembers NIC2 -TeamNicName $vmswitchnic -TeamingMode SwitchIndependent -LoadBalancingAlgorithm Dynamic -Confirm:$false | Out-Null
         }
         if ($nics.Length -eq 4) {
@@ -130,7 +130,7 @@ function Enable-TimeSynchronization {
 
 function Install-OMSA {
     Write-Output "Installing Dell OpenManage Server Administrator if needed..."
-    if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*') {
+    if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*' -and (-not (Test-Path 'C:\Program Files\Dell\SysMgt\omsa'))) {
         #
         # install omsa
         #
@@ -173,9 +173,11 @@ function Install-OMSA {
 }
 
 function Install-FiveNineManager {
-    Write-Output "Installing 5Nine Manager..."
-    Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
-    Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow
+    Write-Output "Installing 5Nine Manager if needed..."
+    if (-not (Test-Path 'C:\Program Files\5nine\5nine Manager')) {
+        Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
+        Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
+    }
 }
 
 function Get-InstallMedia {
@@ -185,12 +187,14 @@ function Get-InstallMedia {
         'SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO'
     )
     $path = 'C:\Users\Public\Documents\ISO'
-    if (!(Test-Path $path)) {
+    if (-not (Test-Path $path)) {
         New-Item -Path $path -ItemType Directory -Force | Out-Null
     }
     foreach ($filename in $filenames)
     {
-        Start-BitsTransfer -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" -Destination (Join-Path $path $filename)
+        if (-not (Test-Path (Join-Path $path $filename))) {
+            Start-BitsTransfer -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" -Destination (Join-Path $path $filename)
+        }
     }
 }
 
@@ -203,7 +207,7 @@ function Enable-iDRAC {
         $VlanId = 64
     )
     Write-Output "Configuring iDRAC..."
-    if (Test-Path "$env:programfiles\Dell\SysMgt\idrac\racadm.exe") {
+    if ((Test-Path "$env:programfiles\Dell\SysMgt\idrac\racadm.exe") -and $Address) {
         racadm set iDRAC.IPv4.Address $Address | Out-Null
         racadm set iDRAC.IPv4.Netmask $Netmask | Out-Null
         racadm set iDRAC.IPv4.Gateway $Gateway | Out-Null
@@ -219,6 +223,10 @@ function Enable-WindowsFirewall {
     Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True | Out-Null
 }
 
+function Install-Kaseya {
+
+}
+
 function Set-ComputerName {
     Write-Output "Setting computer name and restarting..."
     $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
@@ -227,10 +235,12 @@ function Set-ComputerName {
     }
 }
 
-$Address = Read-Host "What is the desired iDRAC address (e.g. 10.60.64.2)?"
-$Netmask = Read-Host "What is the desired iDRAC netmask (e.g. 255.255.255.0)?"
-$Gateway = Read-Host "What is the desired iDRAC gateway (e.g. 10.60.64.1)?"
-$Password = Read-Host "What is the Dell iDRAC password?" -AsSecureString
+if ((Read-Host 'Do you need to (re)configure iDRAC? [y/n]' ).ToLowerInvariant() -eq 'y') {
+    if (!($Address = Read-Host "iDRAC address [10.60.64.2]")) { $Address = '10.60.64.2' }
+    if (!($Netmask = Read-Host "iDRAC netmask [255.255.255.0]")) { $Netmask = '255.255.255.0' }
+    if (!($Gateway = Read-Host "iDRAC gateway [10.60.64.1]")) { $Gateway = '10.60.64.1' }
+    $Password = Read-Host "iDRAC root password" -AsSecureString
+}
 
 Enable-SnmpService
 Disable-PrinterMapping
@@ -246,6 +256,7 @@ Enable-TimeSynchronization
 Enable-iDRAC -Address $Address -Netmask $Netmask -Gateway $Gateway -Password $Password
 Get-InstallMedia
 Enable-WindowsFirewall
+Install-Kaseya
 
 #
 # this last function restarts the computer
