@@ -130,7 +130,7 @@ function Enable-TimeSynchronization {
 
 function Install-OMSA {
     Write-Output "Installing Dell OpenManage Server Administrator (if needed)..."
-    if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*' -and (-not (Test-Path 'C:\Program Files\Dell\SysMgt\omsa'))) {
+    if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*' -and (-not (Test-Path "$env:ProgramFiles\Dell\SysMgt\omsa"))) {
         #
         # install omsa
         #
@@ -158,9 +158,9 @@ function Install-OMSA {
         #
         # secure the omsa web server
         #
-        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-        & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
-        # & "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
+        & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=ciphers setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+        & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% preferences webserver attribute=sslprotocol setting=TLSv1.2
+        # & "$env:ProgramFiles\Dell\SysMgt\oma\bin\omconfig.exe" --% system webserver action=restart
 
         #
         # create a windows firewall rule to allow access
@@ -174,7 +174,7 @@ function Install-OMSA {
 
 function Install-FiveNineManager {
     Write-Output "Installing 5Nine Manager (if needed)..."
-    if (-not (Test-Path 'C:\Program Files\5nine\5nine Manager')) {
+    if (-not (Test-Path "$env:ProgramFiles\5nine\5nine Manager")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
         #Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
         Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","${usb}:\init\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
@@ -234,7 +234,7 @@ function Test-StorageSpeed {
 
 function Install-Kaseya {
     Write-Output "Installing Kaseya (will take at least 10 minutes - if needed)..."
-    if (-not (Test-Path "$env:ProgramFiles\Kaseya")) {
+    if (-not (Test-Path "${env:ProgramFiles(x86)}\Kaseya")) {
         $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
         #Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
         Start-Process -FilePath "${usb}:\init\KcsSetup.exe" -ArgumentList @("/S") -NoNewWindow
