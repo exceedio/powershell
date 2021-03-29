@@ -14,9 +14,9 @@
 #>
 
 function Enable-SnmpService {
-    Write-Output "Enabling SNMP client..."
-    if ((Get-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0).State -ne 'Installed') {
-        Add-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0 | Out-Null
+    Write-Output "Enabling SNMP service..."
+    if ((Get-WindowsOptionalFeature -Online -FeatureName SNMP).State -ne 'Enabled') {
+        Enable-WindowsOptionalFeature -Online -FeatureName SNMP | Out-Null
     }
 }
 
@@ -50,7 +50,7 @@ function Disable-NetOffloadGlobalSettingTaskOffload {
 }
 
 function Set-DvdRomDriveLetter {
-    Write-Output "Changing drive letter on CD-ROM..."
+    Write-Output "Changing DVD-ROM drive letter to Z: (if needed)..."
     $cdrom = Get-WmiObject Win32_Volume -Filter 'DriveType=5'
     if ($cdrom -and ($cdrom.DriveLetter -ne 'Z:')) {
         $cdrom.DriveLetter = 'Z:'
@@ -59,7 +59,7 @@ function Set-DvdRomDriveLetter {
 }
 
 function Set-DataVolume {
-    Write-Output "Creating Data volume..."
+    Write-Output "Creating Data volume (if needed)..."
     if (!(Get-Volume -FileSystemLabel Data -ErrorAction SilentlyContinue)) {
         Get-Disk | Sort-Object 'Total Size' | Select-Object -Last 1 | New-Partition -UseMaximumSize -DriveLetter D | Format-Volume -FileSystem ReFS -NewFileSystemLabel 'Data' -Confirm:$false | Out-Null
     }
@@ -81,7 +81,7 @@ function Enable-NICTeaming {
     $vmswitchnic  = 'VIC1'
     $nicnumber    = 1
 
-    Write-Output "Creating network team for virtual machines..."
+    Write-Output "Creating network team for virtual machines (if needed)..."
     if ((Get-NetLbfoTeam).Name -notcontains $vmteamname) {
         Write-Output "Renaming network adapters..."
         foreach ($nic in $nics) {
@@ -129,7 +129,7 @@ function Enable-TimeSynchronization {
 }
 
 function Install-OMSA {
-    Write-Output "Installing Dell OpenManage Server Administrator if needed..."
+    Write-Output "Installing Dell OpenManage Server Administrator (if needed)..."
     if ((gwmi Win32_ComputerSystem).Manufacturer -match 'Dell*' -and (-not (Test-Path 'C:\Program Files\Dell\SysMgt\omsa'))) {
         #
         # install omsa
@@ -173,7 +173,7 @@ function Install-OMSA {
 }
 
 function Install-FiveNineManager {
-    Write-Output "Installing 5Nine Manager if needed..."
+    Write-Output "Installing 5Nine Manager (if needed)..."
     if (-not (Test-Path 'C:\Program Files\5nine\5nine Manager')) {
         Start-BitsTransfer -Source 'https://exdo.blob.core.windows.net/public/59Manager.msi' -Destination "$env:temp\59Manager.msi"
         Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","$env:temp\59Manager.msi","/qb","/norestart") -Wait -NoNewWindow    
@@ -181,7 +181,7 @@ function Install-FiveNineManager {
 }
 
 function Get-InstallMedia {
-    Write-Output "Downloading Windows installation media..."
+    Write-Output "Downloading Windows installation media (if needed)..."
     $filenames = @(
         'SW_DVD9_Win_Pro_10_20H2.5_64BIT_English_Pro_Ent_EDU_N_MLF_X22-55724.ISO',
         'SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO'
@@ -206,7 +206,7 @@ function Enable-iDRAC {
         [securestring] $Password,
         $VlanId = 64
     )
-    Write-Output "Configuring iDRAC..."
+    Write-Output "Configuring iDRAC (if needed)..."
     if ((Test-Path "$env:programfiles\Dell\SysMgt\idrac\racadm.exe") -and $Address) {
         racadm set iDRAC.IPv4.Address $Address | Out-Null
         racadm set iDRAC.IPv4.Netmask $Netmask | Out-Null
@@ -224,11 +224,17 @@ function Enable-WindowsFirewall {
 }
 
 function Install-Kaseya {
-
+    Write-Output "Installing Kaseya (if needed)..."
+    if (-not (Test-Path "$env:ProgramFiles\Kaseya")) {
+        Start-BitsTransfer -Source 'https://na1vsa33.kaseya.net/api/v2.0/AssetManagement/asset/download-agent-package?packageid=54837432' -Destination "$env:TEMP\KcsSetup.exe"
+        Start-Process -FilePath "$env:TEMP\KcsSetup.exe" -ArgumentList @("/S") -Wait -NoNewWindow
+        Write-Output "Waiting 10 minutes for Kaseya to finish initial audit..."
+        Start-Sleep -Seconds 600
+    }
 }
 
 function Set-ComputerName {
-    Write-Output "Setting computer name and restarting..."
+    Write-Output "Setting computer name and restarting (if needed)..."
     $newname = (-Join('SV', (Get-WmiObject Win32_SystemEnclosure).SMBIOSAssetTag)).Trim()
     if ($env:computername -ne $newname) {
         Rename-Computer -NewName $newname -Restart
