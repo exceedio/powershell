@@ -24,10 +24,10 @@ function Disable-PrinterMapping {
     Write-Output "Disabling printer mapping..."
     $terminalServicesRegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
     if (!(Test-Path $terminalServicesRegKey)) {
-        New-Item -Path $terminalServicesRegKey -ErrorAction SilentlyContinue
+        New-Item -Path $terminalServicesRegKey -ErrorAction SilentlyContinue | Out-Null
     }
     if ((Get-ItemProperty -Path $terminalServicesRegKey).fDisableCpm -ne 1) {
-        Set-ItemProperty -Path $terminalServicesRegKey -Name 'fDisableCpm' -Value 1 -Type DWord -Force
+        Set-ItemProperty -Path $terminalServicesRegKey -Name 'fDisableCpm' -Value 1 -Type DWord -Force | Out-Null
     }
 }
 
@@ -228,6 +228,7 @@ function Test-StorageSpeed {
     Write-Output "Testing storage speed for 5 minutes..."
     $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
     Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("-r","-w30","-d300","-W10","-b8k","-t24","-o12","-Sh","-L","-Z1M","-c64G", "D:\diskspd.dat") -RedirectStandardOutput "diskspd.txt" -Wait -NoNewWindow
+    Remove-Item -Path "D:\diskspd.dat"
 }
 
 function Install-Kaseya {
