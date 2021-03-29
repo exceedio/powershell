@@ -228,7 +228,7 @@ function Enable-WindowsFirewall {
 function Test-StorageSpeed {
     Write-Output "Testing storage speed for 5 minutes..."
     $usb = (Get-Volume | Where-Object DriveType -eq 'Removable').DriveLetter
-    Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("-r","-w30","-d300","-W10","-b8k","-t24","-o12","-Sh","-L","-Z1M","-c64G", "D:\diskspd.dat",">","$env:TEMP\diskspd.txt") -Wait -NoNewWindow
+    Start-Process -FilePath "${usb}:\init\diskspd.exe" -ArgumentList @("-r","-w30","-d300","-W10","-b8k","-t24","-o12","-Sh","-L","-Z1M","-c64G", "D:\diskspd.dat") -Wait -NoNewWindow
     Start-Process -FilePath "notepad.exe" -ArgumentList "$env:TEMP\diskspd.txt" -Wait -NoNewWindow
 }
 
