@@ -7,12 +7,16 @@
     The name of the virtual machine
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/New-ExceedioVM.ps1 -UseBasicParsing | iex
+.NOTES
+    Filename : New-ExceedioVM.ps1
+    Author   : jreese@exceedio.com
+    Modified : Mar 29, 2021
 #>
 
 $Name                = $null
 $Purpose             = $null
 $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks'
-$InstallMedia        = 'SW_DVD9_Win_Server_STD_CORE_2019_1809.1_64Bit_English_DC_STD_MLF_X22-02970.ISO'
+$InstallMedia        = 'SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO'
 $InstallMediaPath    = 'C:\Users\Public\Documents\ISO'
 $Memory              = 4GB
 $ProcessorCount      = 4
@@ -34,7 +38,6 @@ if (!$Purpose) {
 $Path = Join-Path $VirtualHardDiskPath "$Name.vhdx"
 
 if (!(Test-Path $Path)) {
-    Optimize-Volume -DriveLetter D -Defrag -Verbose
     Write-Host "Creating fixed size virtual hard disk..."
     New-VHD -Path $Path -Fixed -SizeBytes 120GB -LogicalSectorSizeBytes 512 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
 }
