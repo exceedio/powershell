@@ -2,7 +2,7 @@
 .SYNOPSIS
     Creates a consistent virtual machine.
 .DESCRIPTION
-    Use this script to create any virtual machine that is created on Hyper-V Server 2012 R2 or later.
+    Use this script to create any virtual machine that is created on Hyper-V Server 2016 or later.
 .PARAMETER Name
     The name of the virtual machine
 .EXAMPLE
