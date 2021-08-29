@@ -1,3 +1,53 @@
+function Invoke-ExceedioWindowsUpdate {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [String]
+        $Criteria = "(IsInstalled=0 and IsAssigned=1 and AutoSelectOnWebSites=1 and IsHidden=0)",
+        [Parameter()]
+        [Switch]
+        $Download = $false,
+        [Parameter()]
+        [Switch]
+        $Install = $false,
+        [Parameter()]
+        [Switch]
+        $Reboot = $false
+    )
+    Write-Output "Critera: $Criteria"
+    $Session = New-Object -ComObject "Microsoft.Update.Session"
+    $Searcher = $Session.CreateupdateSearcher()
+    Write-Output "Searching for updates..."
+    $SearchResult = $Searcher.Search($Criteria)
+    if ($SearchResult.Updates -and $SearchResult.Updates.Count -gt 0) {
+        foreach ($Update in $SearchResult.Updates) {
+            Write-Output ("[+] {0}" -f $Update.Title)
+        }
+        if ($Download -or $Install) {
+            $Downloader = $Session.CreateUpdateDownloader()
+            $Downloader.Updates = $SearchResult.Updates
+            Write-Output "Downloading updates..."
+            $Downloader.Download()
+        }
+        if ($Download -and $Install) {
+            $Installer = $Session.CreateUpdateInstaller()
+            $Installer.Updates = $SearchResult.Updates
+            Write-Output "Installing updates..."
+            $Result = $Installer.Install()
+            if ($Result.RebootRequired) {
+                if ($Reboot) {
+                    Restart-Computer -Force
+                } else {
+                    Write-Output "Installation completed; reboot required but not initiated"
+                }
+            } else {
+                Write-Output "Installation completed; no reboot required"
+            }
+        }
+    } else {
+        Write-Output "No updates found"
+    }
+}
 function Install-ExceedioDellCommandUpdate {
     [CmdletBinding()]
     param (
@@ -43,4 +93,4 @@ function Invoke-ExceedioDellCommandUpdate {
     }
 }
 
-Export-ModuleMember -Function Install-ExceedioDellCommandUpdate, Invoke-ExceedioDellCommandUpdate
+Export-ModuleMember -Function Install-ExceedioDellCommandUpdate, Invoke-ExceedioDellCommandUpdate, Invoke-ExceedioWindowsUpdate
