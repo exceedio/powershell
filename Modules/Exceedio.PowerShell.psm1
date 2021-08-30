@@ -100,7 +100,7 @@ function Install-ExceedioDellCommandUpdate {
         [String]
         $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
     )
-    [xml] $xml = (Invoke-WebRequest -Uri $ConfigurationUri).Content
+    [xml] $xml = (Invoke-WebRequest -Uri $ConfigurationUri -UseBasicParsing).Content
     $installerUri = $xml.Configuration.Dell.CommandUpdate.Latest
     $installer = $installerUri.Substring($installerUri.LastIndexOf("/") + 1)
     Set-Location $env:TEMP
