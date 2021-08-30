@@ -30,6 +30,11 @@ function Invoke-ExceedioWindowsUpdate {
             $Downloader.Download()
         }
         if ($Download -and $Install) {
+            foreach ($Update in $SearchResult.Updates) {
+                if (-not $Update.EulaAccepted) {
+                    $Update.AcceptEula()
+                }
+            }
             $Installer = $Session.CreateUpdateInstaller()
             if ($Installer.IsBusy) {
                 Write-Error "Windows update installer is busy; try again later"
