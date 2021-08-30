@@ -98,31 +98,47 @@ function Install-ExceedioDellCommandUpdate {
     param (
         [Parameter()]
         [String]
-        $ConfigurationUri = ''
+        $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
     )
-    #$Configuration = Invoke-WebRequest -Uri $ConfigurationUri
+    [xml] $xml = (Invoke-WebRequest -Uri $ConfigurationUri).Content
+    $installerUri = $xml.Configuration.Dell.CommandUpdate.Latest
+    $installer = $installerUri.Substring($installerUri.LastIndexOf("/") + 1)
     Set-Location $env:TEMP
     Write-Output "Downloading installer..."
-    Start-BitsTransfer -Source "$BaseUri/$Installer" -Destination .\$Installer
+    Start-BitsTransfer -Source "$installerUri" -Destination .\$installer
     Write-Output "Installing Dell Command Update for Windows 10; please wait..."
-    & .\$Installer /S
+    & .\$installer /S
     Start-Sleep -Seconds 60
-    Remove-Item .\$Installer
+    Remove-Item .\$installer
+    & "C:\Program Files\Dell\CommandUpdate\dcu-cli.exe" /configure -silent -autoSuspendBitLocker=enable -userConsent=disable
     Write-Output "Installation completed"
 }
 
 function Invoke-ExceedioDellCommandUpdate {
+    <#
+    .SYNOPSIS
+    Scans for installs Dell BIOS, firmware, and driver updates using Dell Command Update
+    for desktop and laptop computers.
+    .PARAMETER Scan
+    Scans for updates and displays results on the console as well as the log file written
+    to C:\ProgramData\Dell\logs\dcu\scan.log. Defaults to $false.
+    .PARAMETER Install
+    Scans and installs updates and displays results on the console as well as the log file
+    written to C:\ProgramData\Dell\logs\dcu\scan.log. Defaults to $false.
+    .PARAMETER Reboot
+    Forcefully reboots the computer following a scan or install. Defaults to $false.
+    #>
     [CmdletBinding()]
     param (
-        [Parameter()]
-        [Switch]
-        $Reboot = $false,
         [Parameter()]
         [Switch]
         $Scan = $false,
         [Parameter()]
         [Switch]
-        $Install = $false
+        $Install = $false,
+        [Parameter()]
+        [Switch]
+        $Reboot = $false
     )
     if ($Scan) {
         & "C:\Program Files\Dell\CommandUpdate\dcu-cli.exe" /scan -outputLog=C:\ProgramData\Dell\logs\dcu\scan.log
