@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Dell>
+        <CommandUpdate>
+            <Latest>https://dl.dell.com/FOLDER07582763M/3/Dell-Command-Update-Application-for-Windows-10_GRVPK_WIN_4.3.0_A00_02.EXE</Latest>
+        </CommandUpdate>
+    </Dell>
+</Configuration>

@@ -1,9 +1,28 @@
 function Invoke-ExceedioWindowsUpdate {
+    <#
+    .SYNOPSIS
+    Searches, downloads, and installs Windows updates.
+    .PARAMETER Criteria
+    Search criteria used to determine if an update is applicable. By default we look
+    for updates that are not hidden, not installed, should be installed, and are not
+    restricted to being discoverable by browsing through available updates.
+    .PARAMETER Download
+    Value indicating whether to download applicable updates. Defaults to $false.
+    .PARAMETER Install
+    Value indicating whether to install applicable updates. The -Download switch is
+    implied if -Install is used. Defaults to $false.
+    .PARAMETER Reboot
+    Value indicating whether to automatically reboot the computer if needed after
+    installation is complete. Defaults to $false.
+    .NOTES
+    See https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nf-wuapi-iupdatesearcher-search
+    for details about search criteria.
+    #>
     [CmdletBinding()]
     param (
         [Parameter()]
         [String]
-        $Criteria = "(IsInstalled=0 and IsAssigned=1 and AutoSelectOnWebSites=1 and IsHidden=0)",
+        $Criteria = "(IsInstalled=0 and IsHidden=0 and BrowseOnly=0 and IsAssigned=1)",
         [Parameter()]
         [Switch]
         $Download = $false,
@@ -65,15 +84,23 @@ function Invoke-ExceedioWindowsUpdate {
 }
 
 function Install-ExceedioDellCommandUpdate {
+    <#
+    .SYNOPSIS
+    Installs the latest Universal Windows Platform version of Dell Command Update for
+    Windows 10 32 and 64 bit. Dell Command Update is used to update BIOS, firmware, and
+    drivers for Dell desktop and laptop computers.
+    .PARAMETER ConfigurationUri
+    Location of the configuration file that is used to get the latest version of the
+    Dell Command Update installer. Defaults to the one we include and maintain in the
+    Exceedio GitHub repostiory.
+    #>
     [CmdletBinding()]
     param (
         [Parameter()]
         [String]
-        $BaseUri = 'https://dl.dell.com/FOLDER07582763M/3',
-        [Parameter()]
-        [String]
-        $Installer = 'Dell-Command-Update-Application-for-Windows-10_GRVPK_WIN_4.3.0_A00_02.EXE'
+        $ConfigurationUri = ''
     )
+    #$Configuration = Invoke-WebRequest -Uri $ConfigurationUri
     Set-Location $env:TEMP
     Write-Output "Downloading installer..."
     Start-BitsTransfer -Source "$BaseUri/$Installer" -Destination .\$Installer
