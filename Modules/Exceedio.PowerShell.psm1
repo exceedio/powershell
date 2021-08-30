@@ -31,6 +31,16 @@ function Invoke-ExceedioWindowsUpdate {
         }
         if ($Download -and $Install) {
             $Installer = $Session.CreateUpdateInstaller()
+            if ($Installer.IsBusy) {
+                Write-Error "Windows update installer is busy; try again later"
+                return
+            }
+            if ($Installer.RebootRequiredBeforeInstallation) {
+                Write-Error "Windows installer requires a reboot before installing updates; reboot and try again"
+                return
+            }
+            $Installer.AllowSourcePrompts = $false
+            $Installer.IsForced = $true
             $Installer.Updates = $SearchResult.Updates
             Write-Output "Installing updates..."
             $Result = $Installer.Install()
@@ -48,6 +58,7 @@ function Invoke-ExceedioWindowsUpdate {
         Write-Output "No updates found"
     }
 }
+
 function Install-ExceedioDellCommandUpdate {
     [CmdletBinding()]
     param (
