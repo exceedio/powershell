@@ -8,6 +8,6 @@
         <CommandConfigure>
             <Latest>https://dl.dell.com/FOLDER07308991M/2/Dell-Command-Configure_TMV11_WIN_4.5.0.205_A00_01.EXE</Latest>
             <SHA256Hash>80ad9a976e22bccacae58629372cd05294af35cf67816d309554521c221125ed</SHA256Hash>
-        </CommandConfigure>
+        <CommandConfigure>
     </Dell>
 </Configuration>
