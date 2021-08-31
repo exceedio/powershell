@@ -3,6 +3,11 @@
     <Dell>
         <CommandUpdate>
             <Latest>https://dl.dell.com/FOLDER07582763M/3/Dell-Command-Update-Application-for-Windows-10_GRVPK_WIN_4.3.0_A00_02.EXE</Latest>
+            <SHA256Hash>552d37a1dd5ef06c7af82f8f81f003e9f4b35d6d95ecaf2361c84f43459630f3</SHA256Hash>
         </CommandUpdate>
+        <CommandConfigure>
+            <Latest>https://dl.dell.com/FOLDER07308991M/2/Dell-Command-Configure_TMV11_WIN_4.5.0.205_A00_01.EXE</Latest>
+            <SHA256Hash>80ad9a976e22bccacae58629372cd05294af35cf67816d309554521c221125ed</SHA256Hash>
+        </CommandConfigure
     </Dell>
 </Configuration>

@@ -1,88 +1,47 @@
-function Invoke-ExceedioWindowsUpdate {
-    <#
-    .SYNOPSIS
-    Searches, downloads, and installs Windows updates.
-    .PARAMETER Criteria
-    Search criteria used to determine if an update is applicable. By default we look
-    for updates that are not hidden, not installed, should be installed, and are not
-    restricted to being discoverable by browsing through available updates.
-    .PARAMETER Download
-    Value indicating whether to download applicable updates. Defaults to $false.
-    .PARAMETER Install
-    Value indicating whether to install applicable updates. The -Download switch is
-    implied if -Install is used. Defaults to $false.
-    .PARAMETER Reboot
-    Value indicating whether to automatically reboot the computer if needed after
-    installation is complete. Defaults to $false.
-    .NOTES
-    See https://docs.microsoft.com/en-us/windows/win32/api/wuapi/nf-wuapi-iupdatesearcher-search
-    for details about search criteria.
-    #>
-    [CmdletBinding()]
+function Get-Configuration {
     param (
         [Parameter()]
         [String]
-        $Criteria = "(IsInstalled=0 and IsHidden=0 and BrowseOnly=0 and IsAssigned=1)",
-        [Parameter()]
-        [Switch]
-        $Download = $false,
-        [Parameter()]
-        [Switch]
-        $Install = $false,
-        [Parameter()]
-        [Switch]
-        $Reboot = $false
+        $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
     )
-    Write-Output "Critera: $Criteria"
-    $Session = New-Object -ComObject "Microsoft.Update.Session"
-    $Searcher = $Session.CreateupdateSearcher()
-    Write-Output "Searching for updates..."
-    $SearchResult = $Searcher.Search($Criteria)
-    if ($SearchResult.Updates -and $SearchResult.Updates.Count -gt 0) {
-        foreach ($Update in $SearchResult.Updates) {
-            Write-Output ("[+] {0}" -f $Update.Title)
-        }
-        if ($Download -or $Install) {
-            $Downloader = $Session.CreateUpdateDownloader()
-            $Downloader.Updates = $SearchResult.Updates
-            Write-Output "Downloading updates..."
-            $Downloader.Download()
-        }
-        if ($Download -and $Install) {
-            foreach ($Update in $SearchResult.Updates) {
-                if (-not $Update.EulaAccepted) {
-                    $Update.AcceptEula()
-                }
-            }
-            $Installer = $Session.CreateUpdateInstaller()
-            if ($Installer.IsBusy) {
-                Write-Error "Windows update installer is busy; try again later"
-                return
-            }
-            if ($Installer.RebootRequiredBeforeInstallation) {
-                Write-Error "Windows installer requires a reboot before installing updates; reboot and try again"
-                return
-            }
-            $Installer.AllowSourcePrompts = $false
-            $Installer.IsForced = $true
-            $Installer.Updates = $SearchResult.Updates
-            Write-Output "Installing updates..."
-            $Result = $Installer.Install()
-            if ($Result.RebootRequired) {
-                if ($Reboot) {
-                    Restart-Computer -Force
-                } else {
-                    Write-Output "Installation completed; reboot required but not initiated"
-                }
-            } else {
-                Write-Output "Installation completed; no reboot required"
-            }
-        }
-    } else {
-        Write-Output "No updates found"
-    }
+    return [xml] (Invoke-WebRequest -Uri $ConfigurationUri -UseBasicParsing).Content
 }
 
+function Get-FilenameFromUri {
+    param (
+        [Parameter()]
+        [String]
+        $Uri
+    )
+    return $Uri.Substring($Uri.LastIndexOf("/") + 1)
+}
+
+function Install-FromUri {
+    param (
+        [Parameter()]
+        [String]
+        $Name,
+        [Parameter()]
+        [String]
+        $Uri,
+        [Parameter()]
+        [String]
+        $SHA256Hash
+    )
+    $filename = Join-Path -Path $env:TEMP -ChildPath (Get-FilenameFromUri -Uri $Uri)
+    Write-Output "[*] Downloading installer..."
+    Start-BitsTransfer -Source "$Uri" -Destination "$filename"
+    Write-Output "[*] Verifying file hash..."
+    $hash = (Get-FileHash -Path "$filename" -Algorithm "SHA256").Hash
+    if ($hash -ne $SHA256Hash) {
+        Write-Error "[!] File hash $hash did not match expected hash $SHA256Hash" -ErrorAction Stop
+    }
+    Write-Output "[*] Installing $Name; please wait..."
+    & $filename /S
+    Start-Sleep -Seconds 60
+    Remove-Item $filename
+    Write-Output "[*] Installation completed"
+}
 function Install-ExceedioDellCommandUpdate {
     <#
     .SYNOPSIS
@@ -93,6 +52,10 @@ function Install-ExceedioDellCommandUpdate {
     Location of the configuration file that is used to get the latest version of the
     Dell Command Update installer. Defaults to the one we include and maintain in the
     Exceedio GitHub repostiory.
+    .EXAMPLE
+    PS> Install-ExceedioDellCommandUpdate
+    .EXAMPLE
+    PS> Install-ExceedioDellCommandUpdate -ConfigurationUri https://somepath/to/your/config.xml
     #>
     [CmdletBinding()]
     param (
@@ -100,18 +63,39 @@ function Install-ExceedioDellCommandUpdate {
         [String]
         $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
     )
-    [xml] $xml = (Invoke-WebRequest -Uri $ConfigurationUri -UseBasicParsing).Content
-    $installerUri = $xml.Configuration.Dell.CommandUpdate.Latest
-    $installer = $installerUri.Substring($installerUri.LastIndexOf("/") + 1)
-    Set-Location $env:TEMP
-    Write-Output "Downloading installer..."
-    Start-BitsTransfer -Source "$installerUri" -Destination .\$installer
-    Write-Output "Installing Dell Command Update for Windows 10; please wait..."
-    & .\$installer /S
-    Start-Sleep -Seconds 60
-    Remove-Item .\$installer
+    $xml = Get-Configuration
+    Install-FromUri `
+        -Name "Dell Command Update for Windows 10" `
+        -Uri $xml.Configuration.Dell.CommandUpdate.Latest `
+        -SHA256Hash $xml.Configuration.Dell.CommandUpdate.SHA256Hash
     & "C:\Program Files\Dell\CommandUpdate\dcu-cli.exe" /configure -silent -autoSuspendBitLocker=enable -userConsent=disable
-    Write-Output "Installation completed"
+}
+
+function Install-ExceedioDellCommandConfigure {
+    <#
+    .SYNOPSIS
+    Installs the latest version of Dell Command Configure for Windows 10 32 and 64 bit.
+    Dell Command Configure is used to configure Dell desktop and laptop computers.
+    .PARAMETER ConfigurationUri
+    Location of the configuration file that is used to get the latest version of the
+    Dell Command Update installer. Defaults to the one we include and maintain in the
+    Exceedio GitHub repostiory.
+    .EXAMPLE
+    PS> Install-ExceedioDellCommandUpdate
+    .EXAMPLE
+    PS> Install-ExceedioDellCommandUpdate -ConfigurationUri https://somepath/to/your/config.xml
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [String]
+        $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
+    )
+    $xml = Get-Configuration
+    Install-FromUri `
+        -Name "Dell Command Configure for Windows 10" `
+        -Uri $xml.Configuration.Dell.CommandConfigure.Latest `
+        -SHA256Hash $xml.Configuration.Dell.CommandConfigure.SHA256Hash
 }
 
 function Invoke-ExceedioDellCommandUpdate {
@@ -127,6 +111,12 @@ function Invoke-ExceedioDellCommandUpdate {
     written to C:\ProgramData\Dell\logs\dcu\scan.log. Defaults to $false.
     .PARAMETER Reboot
     Forcefully reboots the computer following a scan or install. Defaults to $false.
+    .EXAMPLE
+    PS> Invoke-ExceedioDellCommandUpdate -Scan
+    .EXAMPLE
+    PS> Invoke-ExceedioDellCommandUpdate -Install
+    .EXAMPLE
+    PS> Invoke-ExceedioDellCommandUpdate -Install -Reboot
     #>
     [CmdletBinding()]
     param (
