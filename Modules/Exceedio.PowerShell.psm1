@@ -2,7 +2,7 @@ function Get-Configuration {
     param (
         [Parameter()]
         [String]
-        $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
+        $ConfigurationUri
     )
     return [xml] (Invoke-WebRequest -Uri $ConfigurationUri -UseBasicParsing).Content
 }
@@ -63,7 +63,7 @@ function Install-ExceedioDellCommandUpdate {
         [String]
         $ConfigurationUri = 'https://raw.githubusercontent.com/exceedio/powershell/master/Modules/Configuration.xml'
     )
-    $xml = Get-Configuration
+    $xml = Get-Configuration -ConfigurationUri $ConfigurationUri
     Install-FromUri `
         -Name "Dell Command Update for Windows 10" `
         -Uri $xml.Configuration.Dell.CommandUpdate.Latest `
