@@ -27,6 +27,11 @@ Configuration Hypervisor {
 
     )
 
+    #
+    # make sure to run Install-RequiredModules.ps1 if you're running
+    # into an error here
+    #
+
     Import-DscResource -ModuleName PSDscResources
     Import-DscResource -ModuleName ComputerManagementDsc
     Import-DscResource -ModuleName NetworkingDsc
@@ -212,28 +217,6 @@ Configuration Hypervisor {
         }
     }
 }
-
-function Install-ModuleIfMissing {
-    param (
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $Name
-    )
-
-    if ((Get-Module -Name $Name -ListAvailable) -eq $null) {
-        Install-Module -Name $Name -Scope AllUsers -Force
-    }
-}
-
-#
-# install required modules
-#
-Install-ModuleIfMissing PSDscResources
-Install-ModuleIfMissing ComputerManagementDsc
-Install-ModuleIfMissing NetworkingDsc
-Install-ModuleIfMissing StorageDsc
-Install-ModuleIfMissing xHyper-V
 
 #
 # here we list non-boot disks that are candidates for storing virtual machines
