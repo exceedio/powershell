@@ -205,6 +205,19 @@ $storageDiskUniqueId = Read-Host "Type the UniqueId of the disk that will be use
 #
 $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
 
+#
+# generate the configuration
+#
 Exceedio-HVServer2022 `
     -ComputerName $computerName `
-    -StorageDiskUniqueId $storageDiskUniqueId
+    -StorageDiskUniqueId $storageDiskUniqueId `
+    -OutputPath "$env:temp\dsc"
+
+#
+# implement the configuration
+#
+Start-DscConfiguration `
+    -Path "$env:temp\dsc" `
+    -Force `
+    -Wait `
+    -Verbose
