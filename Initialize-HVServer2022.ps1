@@ -6,7 +6,7 @@
     This scripts makes a lot of assumptions about how you want your Hyper-V parent to be
     configured. Do not blindly run this script.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2022.ps1 -UseBasicParsing | iex
+    iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2022.ps1'))
 .NOTES
     Filename : Initialize-HVServer2022.ps1
     Author   : jreese@exceedio.com
@@ -31,7 +31,7 @@ Configuration Exceedio-HVServer2022 {
     Import-DscResource -ModuleName ComputerManagementDsc
     Import-DscResource -ModuleName NetworkingDsc
     Import-DscResource -ModuleName StorageDsc
-    Import-DscResource -ModuleName xHyperV
+    Import-DscResource -ModuleName xHyper-V
 
     Node 'localhost' {
 
@@ -187,6 +187,15 @@ Configuration Exceedio-HVServer2022 {
         }
     }
 }
+
+#
+# install required modules
+#
+Install-Module PSDscResources -Scope AllUsers -Force
+Install-Module ComputerManagementDsc -Scope AllUsers -Force
+Install-Module NetworkingDsc -Scope AllUsers -Force
+Install-Module StorageDsc -Scope AllUsers -Force
+Install-Module xHyper-V -Scope AllUsers -Force
 
 #
 # here we list non-boot disks that are candidates for storing virtual machines
