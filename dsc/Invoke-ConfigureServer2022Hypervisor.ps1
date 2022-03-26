@@ -13,7 +13,7 @@
     Modified : Mar 25, 2022
 #>
 
-Configuration Exceedio-HVServer2022 {
+Configuration Server2022Hypervisor {
 
     param (
         [Parameter(Mandatory = $true)]
@@ -53,37 +53,47 @@ Configuration Exceedio-HVServer2022 {
             Force = $true
         }
 
-        Registry EnableRdp {
-            Key = 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server'
+        RemoteDesktopAdmin EnableRdp {
+            IsSingleInstance = 'Yes'
             Ensure = 'Present'
-            ValueName = 'fDenyTSConnections'
-            ValueType = 'DWord'
-            ValueData = '0'
-            Force = $true
+            UserAuthentication = 'Secure'
         }
 
-        Registry EnableRdpUserAuthentication {
-            Key = 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp'
-            Ensure = 'Present'
-            ValueName = 'UserAuthentication'
-            ValueType = 'DWord'
-            ValueData = '1'
-            Force = $true
-        }
-
-        Firewall EnableRdpFirewallRule {
-            Group = 'Remote Desktop'
+        Firewall RemoteDesktop-In-TCP-WS {
+            Name = 'RemoteDesktop-In-TCP-WS'
             Ensure = 'Present'
             Enabled = 'True'
-            Profile = ('Domain', 'Private', 'Public')
+            Profile = ('Domain', 'Private')
         }
 
-        Firewall EnableRdpFirewallRule {
-            Group = 'Remote Desktop'
+        Firewall RemoteDesktop-In-TCP-WSS {
+            Name = 'RemoteDesktop-In-TCP-WSS'
             Ensure = 'Present'
             Enabled = 'True'
-            Profile = ('Domain', 'Private', 'Public')
+            Profile = ('Domain', 'Private')
         }
+
+        Firewall RemoteDesktop-Shadow-In-TCP {
+            Name = 'RemoteDesktop-Shadow-In-TCP'
+            Ensure = 'Present'
+            Enabled = 'True'
+            Profile = ('Domain', 'Private')
+        }
+
+        Firewall RemoteDesktop-UserMode-In-TCP {
+            Name = 'RemoteDesktop-UserMode-In-TCP'
+            Ensure = 'Present'
+            Enabled = 'True'
+            Profile = ('Domain', 'Private')
+        }
+
+        Firewall RemoteDesktop-UserMode-In-UDP {
+            Name = 'RemoteDesktop-UserMode-In-UDP'
+            Ensure = 'Present'
+            Enabled = 'True'
+            Profile = ('Domain', 'Private')
+        }
+
 
         FirewallProfile EnablePrivateFirewallProfile {
             Name = 'Private'
@@ -156,9 +166,11 @@ Configuration Exceedio-HVServer2022 {
             DependsOn = '[Service]EnableW32Time'
         }
 
-        OpticalDiskDriverLetter SetDVDDriveLetter {
-            DiskId = 1
-            DriveLetter = 'Z'
+        if ((Get-CimInstance Win32_ComputerSystem).Model -ne 'Virtual Machine') {
+            OpticalDiskDriveLetter SetDVDDriveLetter {
+                DiskId = 1
+                DriveLetter = 'Z'
+            }
         }
 
         WaitForDisk StorageDisk {
@@ -166,7 +178,7 @@ Configuration Exceedio-HVServer2022 {
             DiskIdType = 'UniqueId'
             RetryIntervalSec = 60
             RetryCount = 60
-            DependsOn = '[OpticalDiskDriverLetter]SetDVDDriveLetter'
+            #DependsOn = '[OpticalDiskDriveLetter]SetDVDDriveLetter'
         }
 
         Disk StorageVolume {
@@ -179,28 +191,54 @@ Configuration Exceedio-HVServer2022 {
             DependsOn = '[WaitForDisk]StorageDisk'
         }
 
-        xVMHost SetVMPaths {
+        WindowsFeature HyperV {
             Name = 'Hyper-V'
             Ensure = 'Present'
-            IncludeAllSubFeature = $true
-            DependsOn = '[WindowsFeature]HyperV'
+            DependsOn = '[Disk]StorageVolume'
         }
+
+        WindowsFeature HyperVTools {
+            Name = 'RSAT-Hyper-V-Tools'
+            Ensure = 'Present'
+            DependsOn = '[WindowsFeature]HyperV'
+            IncludeAllSubFeature = $true
+        }
+
+        xVMHost HyperVStoragePaths {
+            IsSingleInstance = 'Yes'
+            VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks'
+            VirtualMachinePath = 'D:\Hyper-V\Virtual Machines'
+            DependsOn = '[WindowsFeature]HyperVTools'
+        }
+    }
+}
+
+function Install-ModuleIfMissing {
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Name
+    )
+
+    if ((Get-Module -Name $Name -ListAvailable) -eq $null) {
+        Install-Module -Name $Name -Scope AllUsers -Force
     }
 }
 
 #
 # install required modules
 #
-Install-Module PSDscResources -Scope AllUsers -Force
-Install-Module ComputerManagementDsc -Scope AllUsers -Force
-Install-Module NetworkingDsc -Scope AllUsers -Force
-Install-Module StorageDsc -Scope AllUsers -Force
-Install-Module xHyper-V -Scope AllUsers -Force
+Install-ModuleIfMissing PSDscResources
+Install-ModuleIfMissing ComputerManagementDsc
+Install-ModuleIfMissing NetworkingDsc
+Install-ModuleIfMissing StorageDsc
+Install-ModuleIfMissing xHyper-V
 
 #
 # here we list non-boot disks that are candidates for storing virtual machines
 #
-Get-Disk | Where-Object IsBoot -eq $false | Select-Object Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}}
+Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}}
 
 #
 # now we ask the caller to tell us which disk they want to use; we don't ask for
@@ -220,13 +258,13 @@ $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
 Exceedio-HVServer2022 `
     -ComputerName $computerName `
     -StorageDiskUniqueId $storageDiskUniqueId `
-    -OutputPath "$env:temp\dsc"
+    -OutputPath "$env:systemdrive\Dsc"
 
 #
 # implement the configuration
 #
 Start-DscConfiguration `
-    -Path "$env:temp\dsc" `
+    -Path "$env:systemdrive\Dsc" `
     -Force `
     -Wait `
     -Verbose
