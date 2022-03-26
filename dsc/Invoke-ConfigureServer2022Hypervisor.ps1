@@ -6,11 +6,11 @@
     This scripts makes a lot of assumptions about how you want your Hyper-V parent to be
     configured. Do not blindly run this script.
 .EXAMPLE
-    iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/Initialize-HVServer2022.ps1'))
+    iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Invoke-ConfigureServer2022Hypervisor.ps1'))
 .NOTES
-    Filename : Initialize-HVServer2022.ps1
+    Filename : Invoke-ConfigureServer2022Hypervisor.ps1
     Author   : jreese@exceedio.com
-    Modified : Mar 25, 2022
+    Modified : Mar 26, 2022
 #>
 
 Configuration Server2022Hypervisor {
