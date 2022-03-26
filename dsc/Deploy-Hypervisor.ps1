@@ -6,14 +6,14 @@
     This scripts makes a lot of assumptions about how you want your Hyper-V parent to be
     configured. Do not blindly run this script.
 .EXAMPLE
-    iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Invoke-ConfigureServer2022Hypervisor.ps1'))
+    iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Deploy-Hypervisor.ps1'))
 .NOTES
-    Filename : Invoke-ConfigureServer2022Hypervisor.ps1
+    Filename : Deploy-Hypervisor.ps1
     Author   : jreese@exceedio.com
     Modified : Mar 26, 2022
 #>
 
-Configuration Server2022Hypervisor {
+Configuration Hypervisor {
 
     param (
         [Parameter(Mandatory = $true)]
@@ -245,7 +245,7 @@ Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,Uni
 # the number of the disk - we need the unique id because according to MS the disk
 # id can change between reboots
 #
-$storageDiskUniqueId = Read-Host "Type the UniqueId of the disk that will be used to store virtual machines"
+$storageDiskUniqueId = (Get-Disk -Number (Read-Host "Type the number of the disk that will be used to store virtual machines")).UniqueId
 
 #
 # ask the caller for the EID of this computer so that we can create the computer name
@@ -255,7 +255,7 @@ $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
 #
 # generate the configuration
 #
-Server2022Hypervisor `
+Hypervisor `
     -ComputerName $computerName `
     -StorageDiskUniqueId $storageDiskUniqueId `
     -OutputPath "$env:systemdrive\Dsc"
