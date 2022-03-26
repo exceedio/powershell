@@ -255,7 +255,7 @@ $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
 #
 # generate the configuration
 #
-Exceedio-HVServer2022 `
+Server2022Hypervisor `
     -ComputerName $computerName `
     -StorageDiskUniqueId $storageDiskUniqueId `
     -OutputPath "$env:systemdrive\Dsc"
