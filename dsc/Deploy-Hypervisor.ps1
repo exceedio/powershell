@@ -23,8 +23,14 @@ Configuration Hypervisor {
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [String]
-        $StorageDiskUniqueId
-
+        $StorageDiskUniqueId,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [String[]]
+        $ExternalVirtualSwitchNics,
+        [Parameter(Mandatory = $false)]
+        [String]
+        $DellOmsaManagedNodeUri = 'https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe'
     )
 
     #
@@ -215,6 +221,34 @@ Configuration Hypervisor {
             VirtualMachinePath = 'D:\Hyper-V\Virtual Machines'
             DependsOn = '[WindowsFeature]HyperVTools'
         }
+
+        xVMSwitch ExternalSwitch {
+            Name = 'External Virtual Switch'
+            Ensure = 'Present'
+            Type = 'External'
+            NetAdapterName = $ExternalVirtualSwitchNics
+            AllowManagementOS = $false
+        }
+
+        if ((Get-ComputerInfo).CsManufacturer -match "Dell") {
+            Script InstallDellOmsa {
+                SetScript = {
+                    $filename = $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
+                    Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$env:temp\omsa"
+                    Start-Process -FilePath "$env:temp\omsa\$filename" -ArgumentList @("/auto") -Wait -NoNewWindow
+                    Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
+                }
+                TestScript = {
+                    return ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -match "time.google.com")
+                }
+                GetScript = {
+                    return @{
+                        Result = (Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1)
+                    }                
+                }
+
+            }
+        }
     }
 }
 
@@ -231,6 +265,18 @@ Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,Uni
 $storageDiskUniqueId = (Get-Disk -Number (Read-Host "Type the number of the disk that will be used to store virtual machines")).UniqueId
 
 #
+# here we list network adapters that are candidates for virtual switch
+#
+
+Get-NetAdapter | Sort Name
+
+#
+# now we ask the caller to tell us which NIC(s) should comprise the default
+# external virtual switch
+#
+$externalVirtualSwitchNics = @(Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch")
+
+#
 # ask the caller for the EID of this computer so that we can create the computer name
 #
 $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
@@ -241,6 +287,7 @@ $computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
 Hypervisor `
     -ComputerName $computerName `
     -StorageDiskUniqueId $storageDiskUniqueId `
+    -ExternalVirtualSwitchNics $externalVirtualSwitchNics `
     -OutputPath "$env:systemdrive\Dsc"
 
 #
