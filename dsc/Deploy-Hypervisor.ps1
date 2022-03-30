@@ -177,19 +177,12 @@ Configuration Hypervisor {
             DependsOn = '[Service]EnableW32Time'
         }
 
-        if ((Get-CimInstance Win32_ComputerSystem).Model -ne 'Virtual Machine') {
-            OpticalDiskDriveLetter SetDVDDriveLetter {
-                DiskId = 1
-                DriveLetter = 'Z'
-            }
-        }
-
         WaitForDisk StorageDisk {
             DiskId = $StorageDiskUniqueId
             DiskIdType = 'UniqueId'
             RetryIntervalSec = 60
             RetryCount = 60
-            #DependsOn = '[OpticalDiskDriveLetter]SetDVDDriveLetter'
+            DependsOn = '[OpticalDiskDriveLetter]SetDVDDriveLetter'
         }
 
         Disk StorageVolume {
@@ -199,7 +192,6 @@ Configuration Hypervisor {
             FSLabel = 'Data'
             FSFormat = 'ReFS'
             AllocationUnitSize = 64KB
-            DependsOn = '[WaitForDisk]StorageDisk'
         }
 
         WindowsFeature HyperV {
@@ -231,22 +223,31 @@ Configuration Hypervisor {
         }
 
         if ((Get-ComputerInfo).CsManufacturer -match "Dell") {
+
+            $destinationPath = Join-Path $env:temp $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
+
+            File DownloadDellOmsa {
+                SourcePath = $DellOmsaManagedNodeUri
+                DestinationPath = $destinationPath
+                Ensure = 'Present'
+            }
+
             Script InstallDellOmsa {
                 SetScript = {
-                    $filename = $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
-                    Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$env:temp\omsa"
-                    Start-Process -FilePath "$env:temp\omsa\$filename" -ArgumentList @("/auto") -Wait -NoNewWindow
+                    #$filename = $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
+                    #Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$env:temp\omsa"
+                    Start-Process -FilePath $destinationPath -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
                 }
                 TestScript = {
-                    return ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -match "time.google.com")
+                    return (Test-Path -Path 'C:\Program Files\Dell')
                 }
                 GetScript = {
                     return @{
-                        Result = (Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1)
+                        Result = (Test-Path -Path 'C:\Program Files\Dell')
                     }                
                 }
-
+                DependsOn = '[File]DownloadDellOmsa'
             }
         }
     }
