@@ -171,9 +171,10 @@ Configuration Hypervisor {
         Script EnableTimeSyncWithGoogle {
             SetScript = {
                 w32tm.exe /config /manualpeerlist:"time.google.com" /syncfromflags:manual /update | Out-Null
+                w32tm.exe /resync
             }
             TestScript = {
-                return ((Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1) -match "time.google.com")
+                return ((w32tm.exe /query /configuration | Select-String 'NtpServer: time.google.com') -ne $null)
             }
             GetScript = {
                 return @{
