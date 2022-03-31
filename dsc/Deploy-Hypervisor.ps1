@@ -36,7 +36,10 @@ Configuration Hypervisor {
         $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
         [Parameter(Mandatory = $false)]
         [String]
-        $VirtualMachinePath = 'D:\Hyper-V'
+        $VirtualMachinePath = 'D:\Hyper-V',
+        [Parameter(Mandatory = $false)]
+        [String]
+        $VirtualMachineISOPath = 'C:\Users\Public\Documents\ISO'
     )
 
     #
@@ -65,6 +68,15 @@ Configuration Hypervisor {
             Key = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
             Ensure = 'Present'
             ValueName = 'fDisableCpm'
+            ValueType = 'DWord'
+            ValueData = '1'
+            Force = $true
+        }
+
+        Registry HideFirstRunExperience {
+            Key = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
+            Ensure = 'Present'
+            ValueName = 'HideFirstRunExperience'
             ValueType = 'DWord'
             ValueData = '1'
             Force = $true
@@ -214,6 +226,20 @@ Configuration Hypervisor {
             Ensure = 'Present'
             Type = 'Directory'
             DependsOn = '[Disk]FormatStorageVolume'
+        }
+
+        File CreateVirtualMachineISOPath {
+            DestinationPath = $VirtualMachineISOPath
+            Ensure = 'Present'
+            Type = 'Directory'
+        }
+
+        File DeleteDefaultVirtualMachinePath {
+            DestinationPath = 'C:\Users\Public\Documents\Hyper-V'
+            Ensure = 'Absent'
+            Type = 'Directory'
+            Force = $true
+            DependsOn = '[xVMHost]HyperVStoragePaths'
         }
 
         WindowsFeature EnableHyperVFeature {
