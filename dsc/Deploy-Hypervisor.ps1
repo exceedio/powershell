@@ -36,7 +36,7 @@ Configuration Hypervisor {
         $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
         [Parameter(Mandatory = $false)]
         [String]
-        $VirtualMachinePath = 'D:\Hyper-V\Virtual Machines'
+        $VirtualMachinePath = 'D:\Hyper-V'
     )
 
     #
@@ -207,7 +207,6 @@ Configuration Hypervisor {
             DestinationPath = $VirtualHardDiskPath
             Ensure = 'Present'
             Type = 'Directory'
-            Recurse = $true
             DependsOn = '[Disk]FormatStorageVolume'
         }
 
@@ -215,7 +214,6 @@ Configuration Hypervisor {
             DestinationPath = $VirtualMachinePath
             Ensure = 'Present'
             Type = 'Directory'
-            Recurse = $true
             DependsOn = '[Disk]FormatStorageVolume'
         }
 
@@ -278,7 +276,7 @@ Configuration Hypervisor {
                 TestScript = {
                     if (-not (Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')) { return $false }
                     if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers)[1] -ne 'CIPHERS-Value : TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256') { return $false }
-                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2') { return $false }
+                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2,TLSv1.3') { return $false }
                     return $true
                 }
                 GetScript = {
