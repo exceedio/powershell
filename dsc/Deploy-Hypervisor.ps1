@@ -182,7 +182,6 @@ Configuration Hypervisor {
             DiskIdType = 'UniqueId'
             RetryIntervalSec = 60
             RetryCount = 60
-            DependsOn = '[OpticalDiskDriveLetter]SetDVDDriveLetter'
         }
 
         Disk StorageVolume {
@@ -192,6 +191,7 @@ Configuration Hypervisor {
             FSLabel = 'Data'
             FSFormat = 'ReFS'
             AllocationUnitSize = 64KB
+            DependsOn = '[WaitForDisk]StorageDisk'
         }
 
         WindowsFeature HyperV {
@@ -205,6 +205,7 @@ Configuration Hypervisor {
             Ensure = 'Present'
             DependsOn = '[WindowsFeature]HyperV'
             IncludeAllSubFeature = $true
+            DependsOn = '[WindowsFeature]HyperV'
         }
 
         xVMHost HyperVStoragePaths {
@@ -220,6 +221,7 @@ Configuration Hypervisor {
             Type = 'External'
             NetAdapterName = $ExternalVirtualSwitchNics
             AllowManagementOS = $false
+            DependsOn = '[WindowsFeature]HyperVTools'
         }
 
         if ((Get-ComputerInfo).CsManufacturer -match "Dell") {
