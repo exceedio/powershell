@@ -275,7 +275,7 @@ function Select-DellOmsaManagedNodeUri {
 $computerName = Select-ComputerName
 $storageDiskUniqueId = Select-StorageDiskUniqueId
 $externalVirtualSwitchNics = Select-ExternalVirtualSwitchNics
-$dellOmsaManagedNodeUri = Read-Host "Type the URL of the Dell EMC OpenManage Server Administrator Managed Node for Windows (optional)"
+$dellOmsaManagedNodeUri = Select-DellOmsaManagedNodeUri
 
 #
 # generate the configuration
