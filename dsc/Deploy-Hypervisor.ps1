@@ -202,17 +202,31 @@ Configuration Hypervisor {
             DependsOn = '[WaitForDisk]WaitForStorageDisk'
         }
 
+        File CreateVirtualHardDiskPath {
+            DestinationPath = $VirtualHardDiskPath
+            Ensure = 'Present'
+            Type = 'Directory'
+            Recurse =  = $true
+            DependsOn = '[Disk]FormatStorageVolume'
+        }
+
+        File CreateVirtualMachinePath {
+            DestinationPath = $VirtualMachinePath
+            Ensure = 'Present'
+            Type = 'Directory'
+            Recurse =  = $true
+            DependsOn = '[Disk]FormatStorageVolume'
+        }
+
         WindowsFeature EnableHyperVFeature {
             Name = 'Hyper-V'
             Ensure = 'Present'
-            DependsOn = '[Disk]FormatStorageVolume'
         }
 
         WindowsFeature EnableHyperVToolsFeatures {
             Name = 'RSAT-Hyper-V-Tools'
             Ensure = 'Present'
             IncludeAllSubFeature = $true
-            DependsOn = '[WindowsFeature]EnableHyperVFeature'
         }
 
         xVMHost HyperVStoragePaths {
@@ -230,31 +244,6 @@ Configuration Hypervisor {
             EnableEmbeddedTeaming = $true
             AllowManagementOS = $false
             DependsOn = '[WindowsFeature]EnableHyperVToolsFeatures'
-        }
-
-        Script ResetHyperVStoragePaths {
-
-            #
-            # this script exists to cover the situation where the VirtualHardDiskPath and VirtualMachinePath
-            # are set correctly on the VMHost but for whatever reason the folders have been deleted - the DSC
-            # resource xVMHost does not check that the paths actually exist so it's possible for our the
-            # HyperVStoragePaths above to pass but still be in an invalid state
-            #
-
-            SetScript = {
-                Set-VMHost -VirtualHardDiskPath $using:VirtualHardDiskPath -VirtualMachinePath $using:VirtualMachinePath
-            }
-            TestScript = {
-                $path1 = Get-VMHost | Select-Object -ExpandProperty VirtualHardDiskPath
-                $path2 = Get-VMHost | Select-Object -ExpandProperty VirtualMachinePath
-                return ((Test-Path $path1) -and (Test-Path $path2))
-            }
-            GetScript = {
-                return @{
-                    Result = (Get-VMHost | Select-Object VirtualHardDiskPath,VirtualMachinePath)
-                }                
-            }
-            DependsOn = '[xVMHost]HyperVStoragePaths'
         }
 
         if ($DellOmsaManagedNodeUri) {
