@@ -30,7 +30,13 @@ Configuration Hypervisor {
         $ExternalVirtualSwitchNics,
         [Parameter(Mandatory = $false)]
         [String]
-        $DellOmsaManagedNodeUri
+        $DellOmsaManagedNodeUri,
+        [Parameter(Mandatory = $false)]
+        [String]
+        $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
+        [Parameter(Mandatory = $false)]
+        [String]
+        $VirtualMachinePath = 'D:\Hyper-V\Virtual Machines'
     )
 
     #
@@ -50,7 +56,7 @@ Configuration Hypervisor {
             Name = $ComputerName
         }
         
-        WindowsOptionalFeature Snmp {
+        WindowsOptionalFeature EnableSnmpFeature {
             Name = 'SNMP'
             Ensure = 'Present'
         }
@@ -70,35 +76,35 @@ Configuration Hypervisor {
             UserAuthentication = 'Secure'
         }
 
-        Firewall RemoteDesktop-In-TCP-WS {
+        Firewall EnableRemoteDesktop-In-TCP-WS {
             Name = 'RemoteDesktop-In-TCP-WS'
             Ensure = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
-        Firewall RemoteDesktop-In-TCP-WSS {
+        Firewall EnableRemoteDesktop-In-TCP-WSS {
             Name = 'RemoteDesktop-In-TCP-WSS'
             Ensure = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
-        Firewall RemoteDesktop-Shadow-In-TCP {
+        Firewall EnableRemoteDesktop-Shadow-In-TCP {
             Name = 'RemoteDesktop-Shadow-In-TCP'
             Ensure = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
-        Firewall RemoteDesktop-UserMode-In-TCP {
+        Firewall EnableRemoteDesktop-UserMode-In-TCP {
             Name = 'RemoteDesktop-UserMode-In-TCP'
             Ensure = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
-        Firewall RemoteDesktop-UserMode-In-UDP {
+        Firewall EnableRemoteDesktop-UserMode-In-UDP {
             Name = 'RemoteDesktop-UserMode-In-UDP'
             Ensure = 'Present'
             Enabled = 'True'
@@ -148,18 +154,18 @@ Configuration Hypervisor {
             LogIgnored = 'NotConfigured'
         }
 
-        Service EnableW32Time {
-            Name = 'W32Time'
-            Ensure = 'Present'
-            StartupType = 'Automatic'
-            State = 'Running'
-        }
-
-        Service DisableDefragSvc {
+        Service DisableDefragService {
             Name = 'defragsvc'
             Ensure = 'Present'
             StartupType = 'Manual'
             State = 'Stopped'
+        }
+
+        Service EnableW32TimeService {
+            Name = 'W32Time'
+            Ensure = 'Present'
+            StartupType = 'Automatic'
+            State = 'Running'
         }
 
         Script EnableTimeSyncWithGoogle {
@@ -174,17 +180,17 @@ Configuration Hypervisor {
                     Result = (Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1)
                 }                
             }
-            DependsOn = '[Service]EnableW32Time'
+            DependsOn = '[Service]EnableW32TimeService'
         }
 
-        WaitForDisk StorageDisk {
+        WaitForDisk WaitForStorageDisk {
             DiskId = $StorageDiskUniqueId
             DiskIdType = 'UniqueId'
             RetryIntervalSec = 60
             RetryCount = 60
         }
 
-        Disk StorageVolume {
+        Disk FormatStorageVolume {
             DiskId = $StorageDiskUniqueId
             DiskIdType = 'UniqueId'
             DriveLetter = 'D'
@@ -193,27 +199,27 @@ Configuration Hypervisor {
             AllocationUnitSize = 64KB
             PartitionStyle = 'GPT'
             AllowDestructive = $true
-            DependsOn = '[WaitForDisk]StorageDisk'
+            DependsOn = '[WaitForDisk]WaitForStorageDisk'
         }
 
-        WindowsFeature HyperV {
+        WindowsFeature EnableHyperVFeature {
             Name = 'Hyper-V'
             Ensure = 'Present'
-            DependsOn = '[Disk]StorageVolume'
+            DependsOn = '[Disk]FormatStorageVolume'
         }
 
-        WindowsFeature HyperVTools {
+        WindowsFeature EnableHyperVToolsFeatures {
             Name = 'RSAT-Hyper-V-Tools'
             Ensure = 'Present'
             IncludeAllSubFeature = $true
-            DependsOn = '[WindowsFeature]HyperV'
+            DependsOn = '[WindowsFeature]EnableHyperVFeature'
         }
 
         xVMHost HyperVStoragePaths {
             IsSingleInstance = 'Yes'
-            VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks'
-            VirtualMachinePath = 'D:\Hyper-V\Virtual Machines'
-            DependsOn = '[WindowsFeature]HyperVTools'
+            VirtualHardDiskPath = $VirtualHardDiskPath
+            VirtualMachinePath = $VirtualMachinePath
+            DependsOn = '[WindowsFeature]EnableHyperVToolsFeatures'
         }
 
         xVMSwitch ExternalSwitch {
@@ -223,7 +229,32 @@ Configuration Hypervisor {
             NetAdapterName = $ExternalVirtualSwitchNics
             EnableEmbeddedTeaming = $true
             AllowManagementOS = $false
-            DependsOn = '[WindowsFeature]HyperVTools'
+            DependsOn = '[WindowsFeature]EnableHyperVToolsFeatures'
+        }
+
+        Script ResetHyperVStoragePaths {
+
+            #
+            # this script exists to cover the situation where the VirtualHardDiskPath and VirtualMachinePath
+            # are set correctly on the VMHost but for whatever reason the folders have been deleted - the DSC
+            # resource xVMHost does not check that the paths actually exist so it's possible for our the
+            # HyperVStoragePaths above to pass but still be in an invalid state
+            #
+
+            SetScript = {
+                Set-VMHost -VirtualHardDiskPath $using:VirtualHardDiskPath -VirtualMachinePath $using:VirtualMachinePath
+            }
+            TestScript = {
+                $path1 = Get-VMHost | Select-Object -ExpandProperty VirtualHardDiskPath
+                $path2 = Get-VMHost | Select-Object -ExpandProperty VirtualMachinePath
+                return ((Test-Path $path1) -and (Test-Path $path2))
+            }
+            GetScript = {
+                return @{
+                    Result = (Get-VMHost | Select-Object VirtualHardDiskPath,VirtualMachinePath)
+                }                
+            }
+            DependsOn = '[xVMHost]HyperVStoragePaths'
         }
 
         if ($DellOmsaManagedNodeUri) {
@@ -279,7 +310,7 @@ function Show-Warning {
     Write-Warning ''
     Write-Warning 'THIS SCRIPT CAN ERASE YOUR DATA DRIVE!'
     Write-Warning ''
-    return (Read-Host "Type '$phrase' to continue") -eq $phrase
+    return (Read-Host "Type '$phrase' to continue or anything else to quit") -eq $phrase
 }
 
 function Select-StorageDiskUniqueId {
@@ -307,7 +338,7 @@ function Select-DellOmsaManagedNodeUri {
 }
 
 if (-not (Show-Warning)) {
-    exit
+    return 0
 }
 
 $computerName = Select-ComputerName
