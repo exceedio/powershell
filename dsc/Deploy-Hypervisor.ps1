@@ -111,7 +111,6 @@ Configuration Hypervisor {
             Profile = ('Domain', 'Private')
         }
 
-
         FirewallProfile EnablePrivateFirewallProfile {
             Name = 'Private'
             Enabled = 'True'
@@ -296,7 +295,7 @@ function Show-Warning {
     $phrase = 'I am good with losing data'
     Clear-Host
     Write-Warning ''
-    Write-Warning 'THIS SCRIPT CAN ERASE YOUR DATA DRIVE!'
+    Write-Warning 'THIS SCRIPT CAN FORMAT YOUR DATA DRIVE!'
     Write-Warning ''
     return (Read-Host "Type '$phrase' to continue or anything else to quit") -eq $phrase
 }
