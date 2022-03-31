@@ -271,7 +271,7 @@ Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status
 # now we ask the caller to tell us which NIC(s) should comprise the default
 # external virtual switch
 #
-$externalVirtualSwitchNics = @(Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch")
+$externalVirtualSwitchNics = (Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch").Split(',')
 
 #
 # ask the caller for the EID of this computer so that we can create the computer name
