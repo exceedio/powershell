@@ -1,14 +1,16 @@
 <#
 .SYNOPSIS
-    Installs the modules that we use in our DSC configurations.
+    Installs the modules that we use in our DSC configurations
 .DESCRIPTION
-
+    Installs the NuGet package provider and then installs DSC resource
+    modules that are used throughout other scripts in this repository.
+    This must be run before other scripts.
 .EXAMPLE
     iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Install-RequiredModules.ps1'))
 .NOTES
     Filename : Install-RequiredModules.ps1
     Author   : jreese@exceedio.com
-    Modified : Mar 26, 2022
+    Modified : Mar 31, 2022
 #>
 
 #

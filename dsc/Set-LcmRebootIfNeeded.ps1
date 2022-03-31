@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Configures DSC local configuration manager to reboot if needed.
+    Configures DSC local configuration manager to reboot if needed
 .DESCRIPTION
     Running this script configures the Desired State Configuration (DSC) local configuration
     manager (LCM) to automatically reboot on its own while bringing a machine into the desired
