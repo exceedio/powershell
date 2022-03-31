@@ -203,7 +203,6 @@ Configuration Hypervisor {
         WindowsFeature HyperVTools {
             Name = 'RSAT-Hyper-V-Tools'
             Ensure = 'Present'
-            DependsOn = '[WindowsFeature]HyperV'
             IncludeAllSubFeature = $true
             DependsOn = '[WindowsFeature]HyperV'
         }
