@@ -226,23 +226,43 @@ Configuration Hypervisor {
 
         if ($DellOmsaManagedNodeUri) {
 
-            $destinationPath = Join-Path $env:temp $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
-
             Script InstallDellOmsa {
                 SetScript = {
-                    Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$destinationPath"
-                    Start-Process -FilePath "$destinationPath" -ArgumentList @("/auto") -Wait -NoNewWindow
+                    $uri = $using:DellOmsaManagedNodeUri
+                    $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
+                    $pathAndFilename = Join-Path $env:temp $filename
+                    Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    Start-Process -FilePath "$pathAndFilename" -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
                 }
                 TestScript = {
-                    return (Test-Path -Path 'C:\Program Files\Dell')
+                    return (Test-Path -Path 'C:\Program Files\Dell\SysMgt\omsa')
                 }
                 GetScript = {
                     return @{
-                        Result = (Test-Path -Path 'C:\Program Files\Dell')
+                        Result = (Test-Path -Path 'C:\Program Files\Dell\SysMgt\omsa')
                     }                
                 }
                 DependsOn = '[xVMSwitch]ExternalSwitch'
+            }
+
+            Script SecureOmsaWebServer {
+                SetScript = {
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences","webserver","attribute=ciphers", "setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences","webserver","attribute=sslprotocol", "setting=TLSv1.2,TLSv1.3") -Wait -NoNewWindow
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("system","webserver","action=restart") -Wait -NoNewWindow
+                }
+                Test-Script = {
+                    if (-not Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe') { return $false }
+                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers)[1] -ne 'CIPHERS-Value : TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256') { return $false }
+                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2') { return $false }
+                    return $true
+                }
+                Get-Script = {
+                    & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers
+                    & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol
+                }
+                DependsOn = '[Script]InstallDellOmsa'
             }
         }
     }
