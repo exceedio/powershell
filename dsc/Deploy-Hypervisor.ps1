@@ -10,7 +10,7 @@
 .NOTES
     Filename : Deploy-Hypervisor.ps1
     Author   : jreese@exceedio.com
-    Modified : Mar 26, 2022
+    Modified : Mar 31, 2022
 #>
 
 Configuration Hypervisor {
@@ -191,6 +191,8 @@ Configuration Hypervisor {
             FSLabel = 'Data'
             FSFormat = 'ReFS'
             AllocationUnitSize = 64KB
+            PartitionStyle = 'GPT'
+            AllowDestructive = $true
             DependsOn = '[WaitForDisk]StorageDisk'
         }
 
@@ -268,6 +270,15 @@ Configuration Hypervisor {
     }
 }
 
+function Show-Warning {
+    $phrase = 'I am good with losing data'
+    cls
+    Write-Warning ''
+    Write-Warning 'THIS SCRIPT CAN ERASE YOUR DATA DRIVE!'
+    Write-Warning ''
+    return (Read-Host "Type '$phrase' to continue") -eq $phrase
+}
+
 function Select-StorageDiskUniqueId {
     Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}} | Out-Host
     $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
@@ -290,6 +301,10 @@ function Select-DellOmsaManagedNodeUri {
     Write-Host "Latest is https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe"
     Write-Host "Leave blank if not working with a Dell server"
     Read-Host  "Type or paste URL"
+}
+
+if (-not Show-Warning) {
+    exit
 }
 
 $computerName = Select-ComputerName
