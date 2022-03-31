@@ -207,7 +207,7 @@ Configuration Hypervisor {
             DestinationPath = $VirtualHardDiskPath
             Ensure = 'Present'
             Type = 'Directory'
-            Recurse =  = $true
+            Recurse = $true
             DependsOn = '[Disk]FormatStorageVolume'
         }
 
@@ -215,7 +215,7 @@ Configuration Hypervisor {
             DestinationPath = $VirtualMachinePath
             Ensure = 'Present'
             Type = 'Directory'
-            Recurse =  = $true
+            Recurse = $true
             DependsOn = '[Disk]FormatStorageVolume'
         }
 
