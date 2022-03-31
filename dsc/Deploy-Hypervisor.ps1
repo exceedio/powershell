@@ -30,7 +30,7 @@ Configuration Hypervisor {
         $ExternalVirtualSwitchNics,
         [Parameter(Mandatory = $false)]
         [String]
-        $DellOmsaManagedNodeUri = 'https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe'
+        $DellOmsaManagedNodeUri
     )
 
     #
@@ -224,13 +224,12 @@ Configuration Hypervisor {
             DependsOn = '[WindowsFeature]HyperVTools'
         }
 
-        if ((Get-ComputerInfo).CsManufacturer -match "Dell") {
+        if ($DellOmsaManagedNodeUri) {
 
             $destinationPath = Join-Path $env:temp $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
 
             Script InstallDellOmsa {
                 SetScript = {
-                    #$filename = $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
                     Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$destinationPath"
                     Start-Process -FilePath "$destinationPath" -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
@@ -249,34 +248,27 @@ Configuration Hypervisor {
     }
 }
 
-#
-# here we list non-boot disks that are candidates for storing virtual machines
-#
-Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}}
+function Select-StorageDiskUniqueId {
+    Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}}
+    $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
+    return (Get-Disk -Number $number).UniqueId
+}
 
-#
-# now we ask the caller to tell us which disk they want to use; we don't ask for
-# the number of the disk - we need the unique id because according to MS the disk
-# id can change between reboots
-#
-$storageDiskUniqueId = (Get-Disk -Number (Read-Host "Type the number of the disk that will be used to store virtual machines")).UniqueId
+function Select-ExternalVirtualSwitchNics {
+    Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status
+    $list = Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch"
+    return $list.Split(',')
+}
 
-#
-# here we list network adapters that are candidates for virtual switch
-#
+function Select-ComputerName {
+    $asset = Read-Host "Type the asset tag of this hypervisor"
+    return "SV$asset"
+}
 
-Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status
-
-#
-# now we ask the caller to tell us which NIC(s) should comprise the default
-# external virtual switch
-#
-$externalVirtualSwitchNics = (Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch").Split(',')
-
-#
-# ask the caller for the EID of this computer so that we can create the computer name
-#
-$computerName = "SV", (Read-Host "Type the EID of this hypervisor") -join ""
+$computerName = Select-ComputerName
+$storageDiskUniqueId = Select-StorageDiskUniqueId
+$externalVirtualSwitchNics = Select-ExternalVirtualSwitchNics
+$dellOmsaManagedNodeUri = Read-Host "Type the URL of the Dell OMSA Managed Node installer (or leave blank not installing OMSA)"
 
 #
 # generate the configuration
@@ -285,6 +277,7 @@ Hypervisor `
     -ComputerName $computerName `
     -StorageDiskUniqueId $storageDiskUniqueId `
     -ExternalVirtualSwitchNics $externalVirtualSwitchNics `
+    -DellOmsaManagedNodeUri $dellOmsaManagedNodeUri `
     -OutputPath "$env:systemdrive\Dsc"
 
 #
