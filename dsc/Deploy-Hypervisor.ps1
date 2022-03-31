@@ -265,10 +265,17 @@ function Select-ComputerName {
     return "SV$asset"
 }
 
+function Select-DellOmsaManagedNodeUri {
+    Write-Host "Dell EMC OpenManage Server Administrator Managed Node for Windows can be located on Dell support site"
+    Write-Host "Latest is https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe"
+    Write-Host "Leave blank if not working with a Dell server"
+    Read-Host  "Type or paste URL"
+}
+
 $computerName = Select-ComputerName
 $storageDiskUniqueId = Select-StorageDiskUniqueId
 $externalVirtualSwitchNics = Select-ExternalVirtualSwitchNics
-$dellOmsaManagedNodeUri = Read-Host "Type the URL of the Dell OMSA Managed Node installer (or leave blank not installing OMSA)"
+$dellOmsaManagedNodeUri = Read-Host "Type the URL of the Dell EMC OpenManage Server Administrator Managed Node for Windows (optional)"
 
 #
 # generate the configuration
