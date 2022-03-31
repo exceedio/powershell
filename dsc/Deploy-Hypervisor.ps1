@@ -254,15 +254,18 @@ Configuration Hypervisor {
                     Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences","webserver","attribute=sslprotocol", "setting=TLSv1.2,TLSv1.3") -Wait -NoNewWindow
                     Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("system","webserver","action=restart") -Wait -NoNewWindow
                 }
-                Test-Script = {
-                    if (-not Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe') { return $false }
+                TestScript = {
+                    if (-not (Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')) { return $false }
                     if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers)[1] -ne 'CIPHERS-Value : TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256') { return $false }
                     if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2') { return $false }
                     return $true
                 }
-                Get-Script = {
-                    & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers
-                    & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol
+                GetScript = {
+                    $result = & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers
+                    $result += & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol
+                    return @{
+                        Result = $result
+                    }                
                 }
                 DependsOn = '[Script]InstallDellOmsa'
             }
@@ -272,7 +275,7 @@ Configuration Hypervisor {
 
 function Show-Warning {
     $phrase = 'I am good with losing data'
-    cls
+    Clear-Host
     Write-Warning ''
     Write-Warning 'THIS SCRIPT CAN ERASE YOUR DATA DRIVE!'
     Write-Warning ''
@@ -280,13 +283,13 @@ function Show-Warning {
 }
 
 function Select-StorageDiskUniqueId {
-    Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}} | Out-Host
+    Get-Disk | Where-Object IsBoot -eq $false | Sort-Object Number | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}} | Out-Host
     $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
     return (Get-Disk -Number $number).UniqueId
 }
 
 function Select-ExternalVirtualSwitchNics {
-    Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status | Out-Host
+    Get-NetAdapter | Sort-Object Name | Format-Table Name,MacAddress,Status | Out-Host
     $list = Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch"
     return $list.Split(',')
 }
@@ -303,7 +306,7 @@ function Select-DellOmsaManagedNodeUri {
     Read-Host  "Type or paste URL"
 }
 
-if (-not Show-Warning) {
+if (-not (Show-Warning)) {
     exit
 }
 
