@@ -227,17 +227,11 @@ Configuration Hypervisor {
 
             $destinationPath = Join-Path $env:temp $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
 
-            File DownloadDellOmsa {
-                SourcePath = $DellOmsaManagedNodeUri
-                DestinationPath = $destinationPath
-                Ensure = 'Present'
-            }
-
             Script InstallDellOmsa {
                 SetScript = {
                     #$filename = $DellOmsaManagedNodeUri.Substring($DellOmsaManagedNodeUri.LastIndexOf("/") + 1)
-                    #Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$env:temp\omsa"
-                    Start-Process -FilePath $destinationPath -ArgumentList @("/auto") -Wait -NoNewWindow
+                    Start-BitsTransfer -Source $DellOmsaManagedNodeUri -Destination "$destinationPath"
+                    Start-Process -FilePath "$destinationPath" -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
                 }
                 TestScript = {
@@ -248,7 +242,7 @@ Configuration Hypervisor {
                         Result = (Test-Path -Path 'C:\Program Files\Dell')
                     }                
                 }
-                DependsOn = '[File]DownloadDellOmsa'
+                DependsOn = '[xVMSwitch]ExternalSwitch'
             }
         }
     }
