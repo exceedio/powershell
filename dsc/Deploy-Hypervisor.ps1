@@ -219,6 +219,7 @@ Configuration Hypervisor {
             Ensure = 'Present'
             Type = 'External'
             NetAdapterName = $ExternalVirtualSwitchNics
+            EnableEmbeddedTeaming = $true
             AllowManagementOS = $false
             DependsOn = '[WindowsFeature]HyperVTools'
         }
