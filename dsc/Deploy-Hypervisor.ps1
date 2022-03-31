@@ -249,13 +249,13 @@ Configuration Hypervisor {
 }
 
 function Select-StorageDiskUniqueId {
-    Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}}
+    Get-Disk | Where-Object IsBoot -eq $false | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}} | Out-Host
     $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
     return (Get-Disk -Number $number).UniqueId
 }
 
 function Select-ExternalVirtualSwitchNics {
-    Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status
+    Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status | Out-Host
     $list = Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch"
     return $list.Split(',')
 }
