@@ -269,7 +269,7 @@ $storageDiskUniqueId = (Get-Disk -Number (Read-Host "Type the number of the disk
 # here we list network adapters that are candidates for virtual switch
 #
 
-Get-NetAdapter | Sort Name
+Get-NetAdapter | Sort Name | Format-Table Name,MacAddress,Status
 
 #
 # now we ask the caller to tell us which NIC(s) should comprise the default

@@ -11,6 +11,14 @@
     Modified : Mar 26, 2022
 #>
 
+#
+# required to install modules from NuGet
+#
+Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+
+#
+# required for the DSC resources that we utilize
+#
 Install-Module -Name PSDscResources -Scope AllUsers -Force
 Install-Module -Name ComputerManagementDsc -Scope AllUsers -Force
 Install-Module -Name NetworkingDsc -Scope AllUsers -Force
