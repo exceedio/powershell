@@ -85,6 +85,15 @@ Configuration Hypervisor {
             Force = $true
         }
 
+        Registry DisableEdgePasswordManager {
+            Key = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
+            Ensure = 'Present'
+            ValueName = 'PasswordManagerEnabled'
+            ValueType = 'DWord'
+            ValueData = '0'
+            Force = $true
+        }
+
         RemoteDesktopAdmin EnableRdp {
             IsSingleInstance = 'Yes'
             Ensure = 'Present'
