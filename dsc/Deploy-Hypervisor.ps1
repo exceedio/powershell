@@ -338,7 +338,7 @@ Configuration Hypervisor {
 
             Script SetDellRemoteAccessControllerName {
                 SetScript = {
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName $ComputerName.Replace('SV','OB')
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV','OB')
                 }
                 TestScript = {
                     return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -notmatch 'idrac'
@@ -353,8 +353,9 @@ Configuration Hypervisor {
 
             Script SetDellRemoteAccessControllerNic {
                 SetScript = {
-                    $gateway = $DellRemoteAccessControllerAddr.Substring(0, $DellRemoteAccessControllerAddr.LastIndexOf(".")) + ".1"
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Address $DellRemoteAccessControllerAddr | Out-Null
+                    $address = ($using:DellRemoteAccessControllerAddr)
+                    $gateway = $address.Substring(0, $address.LastIndexOf(".")) + ".1"
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Address $address | Out-Null
                     & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Netmask 255.255.255.0 | Out-Null
                     & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Gateway $gateway | Out-Null
                     & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS1 8.8.8.8 | Out-Null
