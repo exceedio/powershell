@@ -248,12 +248,14 @@ Configuration Hypervisor {
         WindowsFeature EnableHyperVFeature {
             Name = 'Hyper-V'
             Ensure = 'Present'
+            DependsOn = '[File]CreateVirtualMachinePath'
         }
 
         WindowsFeature EnableHyperVToolsFeatures {
             Name = 'RSAT-Hyper-V-Tools'
             Ensure = 'Present'
             IncludeAllSubFeature = $true
+            DependsOn = '[File]CreateVirtualMachinePath'
         }
 
         xVMHost HyperVStoragePaths {
