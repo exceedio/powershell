@@ -358,7 +358,7 @@ Configuration Hypervisor {
                     & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV','OB')
                 }
                 TestScript = {
-                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -eq ($using:ComputerName).Replace('SV','OB')
+                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -match ($using:ComputerName).Replace('SV','OB')
                 }
                 GetScript = {
                     return @{
