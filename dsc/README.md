@@ -52,3 +52,7 @@ This script does the following:
 - Installs Dell OpenManage Server Administrator (OMSA) Managed Node and secures its web server
 - Configures the iDRAC address and DNS name
 - Downloads installation media ISO files to C:\Users\Public\Documents\ISO
+
+## Verifying success
+
+- When running `Test-DscConfiguration -Path $env:systemdrive\dsc`, the `InDesiredState` property should be True
