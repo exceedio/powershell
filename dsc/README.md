@@ -34,3 +34,21 @@ iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercon
 ```
 iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Deploy-Hypervisor.ps1'))
 ```
+
+This script does the following:
+
+- Sets computer name
+- Enables the SNMP, Hyper-V, and Hyper-V Tools features
+- Disables first run experience in Edge
+- Disables automatic running of Server Manager when logging on
+- Disables printer mapping when using RDP (to prevent printer driver installation)
+- Enables Remote Desktop and appropriate Remote Desktop firewall rules
+- Configures and enables Public, Private, and Domain Windows Firewall profiles
+- Stops and disables the DefragSvc Windows service
+- Enables and configures the W32Time service to sync with time.google.com
+- Formats the selected disk using ReFS as D: (Data) and sets as default path for Hyper-V
+- Removes the Windows default Hyper-V path (C:\Users\Public\Documents\Hyper-V)
+- Creates a Hyper-V external virtual switch using the specific NICs
+- Installs Dell OpenManage Server Administrator (OMSA) Managed Node and secures its web server
+- Configures the iDRAC address and DNS name
+- Downloads installation media ISO files to C:\Users\Public\Documents\ISO
