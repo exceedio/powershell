@@ -279,17 +279,17 @@ Configuration Hypervisor {
             SetScript = {
                 Start-BitsTransfer `
                     -Source 'https://exdoisofiles.blob.core.windows.net/files/SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO' `
-                    -Destination $VirtualMachineISOPath
+                    -Destination $using:VirtualMachineISOPath
                     Start-BitsTransfer `
                     -Source 'https://exdoisofiles.blob.core.windows.net/files/SW_DVD9_Win_Server_STD_CORE_2019_1809.18_64Bit_English_DC_STD_MLF_X22-74330.ISO' `
-                    -Destination $VirtualMachineISOPath
+                    -Destination $using;VirtualMachineISOPath
             }
             TestScript = {
-                (Get-ChildItem $VirtualMachineISOPath).Count -gt 0
+                (Get-ChildItem $using:VirtualMachineISOPath).Count -gt 0
             }
             GetScript = {
                 return @{
-                    Result = Get-ChildItem $VirtualMachineISOPath
+                    Result = Get-ChildItem $using:VirtualMachineISOPath
                 }                
             }
         }
