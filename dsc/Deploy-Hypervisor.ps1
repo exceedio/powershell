@@ -232,6 +232,7 @@ Configuration Hypervisor {
             AllocationUnitSize = 64KB
             PartitionStyle = 'GPT'
             AllowDestructive = $true
+            ClearDisk = $true
             DependsOn = '[WaitForDisk]WaitForStorageDisk'
         }
 
