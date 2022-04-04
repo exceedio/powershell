@@ -319,6 +319,37 @@ Configuration Hypervisor {
             }
         }
 
+        Script BenchmarkStorageSpeed {
+            SetScript = {
+                Start-BitsTransfer `
+                    -Source 'https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP' `
+                    -Destination 'C:\Users\Public\Documents\DiskSpd.ZIP'
+                Expand-Archive `
+                    -Path 'C:\Users\Public\Documents\DiskSpd.ZIP' `
+                    -DestinationPath 'C:\Users\Public\Documents\DiskSpd' `
+                    -Force
+                $cores = (Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfLogicalProcessors)
+                Start-Process `
+                    -FilePath 'C:\Users\Public\Documents\DiskSpd\amd64\diskspd.exe' `
+                    -ArgumentList @("-t$cores",'-o32','-b4k','-r','-w30','-d60','-Sh','-D','-L','-c5G','D:\diskspd.dat') `
+                    -RedirectStandardOutput 'C:\Users\Public\Documents\DiskSpd.txt' `
+                    -Wait `
+                    -NoNewWindow
+                Remove-Item -Path 'D:\diskspd.dat' -Force
+                Remove-Item -Path 'C:\Users\Public\Documents\DiskSpd.ZIP' -Force
+                Remove-Item -Path 'C:\Users\Public\Documents\DiskSpd' -Recurse -Force
+            }
+            TestScript = {
+                return Test-Path 'C:\Users\Public\Documents\DiskSpd.txt'
+            }
+            GetScript = {
+                return @{
+                    Result = Get-Content 'C:\Users\Public\Documents\storagespeed.txt'
+                }
+            }
+            DependsOn = '[Disk]FormatStorageVolume'
+        }
+
         if ($DellOmsaManagedNodeUri) {
 
             Script InstallDellOmsa {
