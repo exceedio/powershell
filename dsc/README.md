@@ -55,4 +55,14 @@ This script does the following:
 
 ## Verifying success
 
-- When running `Test-DscConfiguration -Path $env:systemdrive\dsc`, the `InDesiredState` property should be True
+Run the following and verify that `InDesiredState` is True:
+
+```
+Test-DscConfiguration -Path $env:systemdrive\dsc
+```
+
+If `InDesiredState` is False then you can run the following to view what failed
+
+```
+Test-DscConfiguration -Path $env:systemdrive\dsc | Select-Object -ExpandProperty ResourcesInDesiredState
+```
