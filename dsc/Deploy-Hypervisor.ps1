@@ -286,15 +286,21 @@ Configuration Hypervisor {
 
         Script DownloadVMInstallMedia {
             SetScript = {
-                Start-BitsTransfer `
-                    -Source 'https://exdoisofiles.blob.core.windows.net/files/SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO' `
-                    -Destination $using:VirtualMachineISOPath
-                    Start-BitsTransfer `
-                    -Source 'https://exdoisofiles.blob.core.windows.net/files/SW_DVD9_Win_Server_STD_CORE_2019_1809.18_64Bit_English_DC_STD_MLF_X22-74330.ISO' `
-                    -Destination $using;VirtualMachineISOPath
+                $folder = $using:VirtualMachineISOPath
+                $filenames = @(
+                    'SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO',
+                    'SW_DVD9_Win_Server_STD_CORE_2019_1809.18_64Bit_English_DC_STD_MLF_X22-74330.ISO'
+                )
+                foreach ($filename in $filenames) {
+                    if (-not (Test-Path (Join-Path $folder $filename))) {
+                        Start-BitsTransfer `
+                            -Source "https://exdoisofiles.blob.core.windows.net/files/$filename" `
+                            -Destination $folder    
+                    }
+                }
             }
             TestScript = {
-                return (@(Get-ChildItem $using:VirtualMachineISOPath).Count -gt 0)
+                return (@(Get-ChildItem $using:VirtualMachineISOPath).Count -eq 2)
             }
             GetScript = {
                 return @{
