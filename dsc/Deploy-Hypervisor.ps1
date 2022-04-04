@@ -94,6 +94,15 @@ Configuration Hypervisor {
             Force = $true
         }
 
+        Registry DisableOpenServerManagerAtLogon {
+            Key = 'HKLM:\SOFTWARE\Microsoft\ServerManager'
+            Ensure = 'Present'
+            ValueName = 'DoNotOpenServerManagerAtLogon'
+            ValueType = 'DWord'
+            ValueData = '1'
+            Force = $true
+        }
+
         RemoteDesktopAdmin EnableRdp {
             IsSingleInstance = 'Yes'
             Ensure = 'Present'
