@@ -30,16 +30,19 @@ Configuration Hypervisor {
         $ExternalVirtualSwitchNics,
         [Parameter(Mandatory = $false)]
         [String]
-        $DellOmsaManagedNodeUri,
-        [Parameter(Mandatory = $false)]
-        [String]
         $VirtualHardDiskPath = 'D:\Hyper-V\Virtual Hard Disks',
         [Parameter(Mandatory = $false)]
         [String]
         $VirtualMachinePath = 'D:\Hyper-V',
         [Parameter(Mandatory = $false)]
         [String]
-        $VirtualMachineISOPath = 'C:\Users\Public\Documents\ISO'
+        $VirtualMachineISOPath = 'C:\Users\Public\Documents\ISO',
+        [Parameter(Mandatory = $false)]
+        [String]
+        $DellOmsaManagedNodeUri,
+        [Parameter(Mandatory = $false)]
+        [String]
+        $DellRemoteAccessControllerAddr
     )
 
     #
@@ -286,7 +289,7 @@ Configuration Hypervisor {
                 return @{
                     Result = Get-ChildItem $VirtualMachineISOPath
                 }                
-        }
+            }
         }
 
         if ($DellOmsaManagedNodeUri) {
@@ -332,6 +335,45 @@ Configuration Hypervisor {
                 }
                 DependsOn = '[Script]InstallDellOmsa'
             }
+
+            Script SetDellRemoteAccessControllerName {
+                SetScript = {
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName $ComputerName.Replace('SV','OB')
+                }
+                TestScript = {
+                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -notmatch 'idrac'
+                }
+                GetScript = {
+                    return @{
+                        Result = (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)
+                    }                
+                }
+                DependsOn = '[Script]InstallDellOmsa'
+            }
+
+            Script SetDellRemoteAccessControllerNic {
+                SetScript = {
+                    $gateway = $DellRemoteAccessControllerAddr.Substring(0, $DellRemoteAccessControllerAddr.LastIndexOf(".")) + ".1"
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Address $DellRemoteAccessControllerAddr | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Netmask 255.255.255.0 | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Gateway $gateway | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS1 8.8.8.8 | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS2 8.8.4.4 | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanId 64 | Out-Null
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanEnable 1 | Out-Null
+                }
+                TestScript = {
+                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4.DHCPEnable)[1] -eq 'DHCPEnable=Disabled'
+                }
+                GetScript = {
+                    $result = & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4
+                    $result += & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic
+                    return @{
+                        Result = $result
+                    }                
+                }
+                DependsOn = '[Script]InstallDellOmsa'
+            }
         }
     }
 }
@@ -362,6 +404,10 @@ function Select-ComputerName {
     return "SV$asset"
 }
 
+function Select-DellRemoteAccessControllerAddr {
+    return Read-Host  "Type the IP address of the Dell iDRAC (leave blank if no iDRAC)"
+}
+
 function Select-DellOmsaManagedNodeUri {
     Write-Host "Dell EMC OpenManage Server Administrator Managed Node for Windows can be located on Dell support site"
     Write-Host "Latest is https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe"
@@ -377,6 +423,7 @@ $computerName = Select-ComputerName
 $storageDiskUniqueId = Select-StorageDiskUniqueId
 $externalVirtualSwitchNics = Select-ExternalVirtualSwitchNics
 $dellOmsaManagedNodeUri = Select-DellOmsaManagedNodeUri
+$dellRemoteAccessControllerAddr = Select-DellRemoteAccessControllerAddr
 
 #
 # generate the configuration
@@ -386,6 +433,7 @@ Hypervisor `
     -StorageDiskUniqueId $storageDiskUniqueId `
     -ExternalVirtualSwitchNics $externalVirtualSwitchNics `
     -DellOmsaManagedNodeUri $dellOmsaManagedNodeUri `
+    -DellRemoteAccessControllerAddr $dellRemoteAccessControllerAddr `
     -OutputPath "$env:systemdrive\Dsc"
 
 #
