@@ -220,11 +220,10 @@ if ($null -eq (Get-MgContext)) {
 # call our functions in the correct sequence
 #
 
-#Set-TemporaryPathsIfNeeded
-#Get-AttachmentsFromMailbox
-#Read-XmlReportsFromAttachments
-#Get-ReportsFromXmlFiles | Sort-Object ReportRangeStart | Select-Object ReportRangeStart, @{label='Domain';expression={($_.Policy.Domain)}}
-#Get-XmlReportResults | Format-Table Provider,Domain,SourceIP,Count,Header,Disposition,DKIMDomain,SPFDomain,DKIM,SPF
+Set-TemporaryPathsIfNeeded
+Get-AttachmentsFromMailbox
+Read-XmlReportsFromAttachments
+Get-ReportsFromXmlFiles
 
 #
 # disconnect from Graph API
@@ -234,5 +233,3 @@ if (-not $StayConnectedToGraphAPIWhenFinished) {
     Write-Host "[*] Disconnecting from Graph API"
     Disconnect-MgGraph
 }
-
-Get-ReportsFromXmlFiles
