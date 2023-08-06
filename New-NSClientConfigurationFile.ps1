@@ -35,7 +35,10 @@
 param (
     [Parameter()]
     [string]
-    $Filename = 'C:\Program Files\NSClient++\nsclient.ini'
+    $Filename = 'C:\Program Files\NSClient++\nsclient.ini',
+    [Parameter()]
+    [switch]
+    $NoBanner
 )
 
 #
@@ -111,7 +114,9 @@ function Write-Banner {
     Write-Output ''
 }
 
-Write-Banner
+if (-not $NoBanner) {
+    Write-Banner
+}
 
 if (-not (Test-Path $Filename)) {
     Write-Output "[!] $Filename does not exist; exiting"
