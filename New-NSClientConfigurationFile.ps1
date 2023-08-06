@@ -64,7 +64,12 @@ if ($existingConfig) {
     Write-Output "[*] Found existing configuration file at $Filename"
 }
 
-$hostname = ($existingConfig | Select-String 'hostname=(\S+)').Matches.Groups[1].Value
+#
+# attempt to pull a hostname out of the existing configuration file;
+# this regex takes into account that our hostname= line may or may not
+# have spaces surrounding the equal sign
+#
+$hostname = ($existingConfig | Select-String 'hostname\s?=\s?(\S+)').Matches.Groups[1].Value
 
 if ($hostname) {
     Write-Output "[*] Found hostname $hostname in existing configuration file"
@@ -73,7 +78,12 @@ if ($hostname) {
     return 1
 }
 
-$address  = ($existingConfig | Select-String 'address=(\S+)').Matches.Groups[1].Value
+#
+# attempt to pull a server address out of the existing configuration file;
+# this regex takes into account that our address= line may or may not
+# have spaces surrounding the equal sign
+#
+$address  = ($existingConfig | Select-String 'address\s?=\s?(\S+)').Matches.Groups[1].Value
 
 if ($address) {
     Write-Output "[*] Found server address $address in existing configuration file"
@@ -82,7 +92,12 @@ if ($address) {
     return 1
 }
 
-$password = ($existingConfig | Select-String 'password=(\S+)').Matches.Groups[1].Value
+#
+# attempt to pull the encryption password out of the existing configuration file;
+# this regex takes into account that our password= line may or may not
+# have spaces surrounding the equal sign
+#
+$password = ($existingConfig | Select-String 'password\s?=\s?(\S+)').Matches.Groups[1].Value
 
 if ($password) {
     Write-Output "[*] Found password [hidden] in existing configuration file"
