@@ -1,9 +1,48 @@
+#Requires -Version 5.1
+
+<#
+.SYNOPSIS
+
+    Generates a standard configuration file for NSClient++
+
+.DESCRIPTION
+
+    This script should be run on a system that already has NSClient++ installed with an existing,
+    working nsclient.ini. The hostname, address, and password values will be gathered from the existing
+    nsclient.ini and then a new configuration file will be written in its place using the standardized
+    values in this script. The original nsclient.ini will be saved as nsclient.ini.orig.
+
+    Text banner created at https://manytools.org/hacker-tools/ascii-banner/ using DOS Rebel font.
+
+.PARAMETER Filename
+
+    Full path to the existing nsclient.ini configuration file. Defaults to the standard location
+    of a typical NSClient++ installation (C:\Program Files\NSClient++\nsclient.ini).
+
+.EXAMPLE
+
+    iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/New-NSClientConfigurationFile.ps1'))
+
+.NOTES
+
+    Filename : New-NSClientConfigurationFile.ps1
+    Author   : jreese@exceedio.com
+    Modified : Aug, 8, 2023
+
+#>
+
 [CmdletBinding()]
 param (
     [Parameter()]
     [string]
     $Filename = 'C:\Program Files\NSClient++\nsclient.ini'
 )
+
+#
+# list of exact service names to ignore or are considered OK to be stopped
+# despite being configured for auto start; please keep list in alphabetical
+# order when updating
+#
 
 $serviceNamesToIgnoreExact = @(
     'BITS',
@@ -35,6 +74,13 @@ $serviceNamesToIgnoreExact = @(
     'wuauserv'
 )
 
+#
+# list of partial service names to ignore or are considered OK to be stopped
+# despite being configured for auto start; these are services that have random
+# strings appended to the end making it impossible to get an exact match from
+# the list above; please keep list in alphabetical order when updating
+#
+
 $serviceNamesToIgnoreLike = @(
     'cbdhsvc_',
     'CDPUserSvc_',
@@ -53,10 +99,24 @@ function Get-ServiceCheckCommand {
 }
 
 function Write-Banner {
-    Write-Output ""
+    Write-Output ''
+    Write-Output '                              ███                       █████        ███              ███ '
+    Write-Output '                             ░░░                       ░░███        ░░░              ░░░  '
+    Write-Output ' ████████    █████   ██████  ████   ██████  ████████   ███████      ████  ████████   ████ '
+    Write-Output '░░███░░███  ███░░   ███░░███░░███  ███░░███░░███░░███ ░░░███░      ░░███ ░░███░░███ ░░███ '
+    Write-Output ' ░███ ░███ ░░█████ ░███ ░░░  ░███ ░███████  ░███ ░███   ░███        ░███  ░███ ░███  ░███ '
+    Write-Output ' ░███ ░███  ░░░░███░███  ███ ░███ ░███░░░   ░███ ░███   ░███ ███    ░███  ░███ ░███  ░███ '
+    Write-Output ' ████ █████ ██████ ░░██████  █████░░██████  ████ █████  ░░█████  ██ █████ ████ █████ █████'
+    Write-Output '░░░░ ░░░░░ ░░░░░░   ░░░░░░  ░░░░░  ░░░░░░  ░░░░ ░░░░░    ░░░░░  ░░ ░░░░░ ░░░░ ░░░░░ ░░░░░ '
+    Write-Output ''
 }
 
 Write-Banner
+
+if (-not (Test-Path $Filename)) {
+    Write-Output "[!] $Filename does not exist; exiting"
+    return 1
+}
 
 $existingConfig = Get-Content $Filename
 
@@ -148,10 +208,9 @@ $content += ""
 $content += "[/settings/external scripts/wrappings]"
 $content += ""
 $content += "bat = scripts\\%SCRIPT% %ARGS%"
-$content += 'ps1 = cmd /c echo scripts\\%SCRIPT% %ARGS%; exit($lastexitcode) | @powershell -noprofile -executionpolicy unrestricted -'
+$content += 'ps1 = cmd /c echo scripts\\%SCRIPT% %ARGS%; exit($lastexitcode) | @powershell -noprofile -executionpolicy unrestricted -command -'
 $content += 'vbs = cscript.exe //t:90 //nologo scripts\\lib\\wrapper.vbs %SCRIPT% %ARGS%'
 $content += 'exe = cmd /c %SCRIPT% %ARGS%'
-$content += 'command -'
 $content += ""
 $content += "[/settings/external scripts/scripts]"
 $content += ""
@@ -199,7 +258,7 @@ $content += '[/settings/scheduler/schedules/network]'
 $content += ''
 $content += 'interval=5m'
 $content += 'alias=network'
-$content += 'command=check_network'
+$content += 'command=check_network warn="total > 10000000" crit="total > 100000000"'
 $content += ''
 
 if ((Get-WmiObject -Class Win32_ComputerSystem).Manufacturer -match 'Dell') {
