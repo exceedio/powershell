@@ -219,7 +219,7 @@ $content += 'exe = cmd /c %SCRIPT% %ARGS%'
 $content += ""
 $content += "[/settings/external scripts/scripts]"
 $content += ""
-$content += "check_omsa=scripts/check_openmanage.exe"
+$content += "check_omsa=scripts/check_openmanage.exe --timeout 60"
 $content += ""
 $content += "[/settings/external scripts/wrapped scripts]"
 $content += ""
