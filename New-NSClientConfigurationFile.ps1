@@ -263,7 +263,7 @@ $content += '[/settings/scheduler/schedules/network]'
 $content += ''
 $content += 'interval=5m'
 $content += 'alias=network'
-$content += 'command=check_network warn="total > 10000000" crit="total > 100000000"'
+$content += 'command=check_network warn=0.3G crit=0.6G'
 $content += ''
 
 if ((Get-WmiObject -Class Win32_ComputerSystem).Manufacturer -match 'Dell') {
