@@ -100,7 +100,7 @@ function Get-ServiceCheckCommand {
     $command = 'service=check_service "filter=start_type = ''auto'' '
     $serviceNamesToIgnoreLike | ForEach-Object { $command += "and name not like '$_' " }
     $command += 'and name not in ('
-    $command += ($serviceNamesToIgnoreExact | ForEach-Object { "'$_'"}) -join ','
+    $command += ($serviceNamesToIgnoreExact | ForEach-Object { "'$_'" }) -join ','
     $command += ')"'
     $command
 }
@@ -142,7 +142,8 @@ $hostname = ($existingConfig | Select-String 'hostname\s?=\s?(\S+)').Matches.Gro
 
 if ($hostname) {
     Write-Output "[*] Found hostname $hostname in existing configuration file"
-} else {
+}
+else {
     Write-Output "[!] Hostname not found in existing configuration file; quitting"
     return 1
 }
@@ -152,11 +153,12 @@ if ($hostname) {
 # this regex takes into account that our address= line may or may not
 # have spaces surrounding the equal sign
 #
-$address  = ($existingConfig | Select-String 'address\s?=\s?(\S+)').Matches.Groups[1].Value
+$address = ($existingConfig | Select-String 'address\s?=\s?(\S+)').Matches.Groups[1].Value
 
 if ($address) {
     Write-Output "[*] Found server address $address in existing configuration file"
-} else {
+}
+else {
     Write-Output "[!] Server address not found in existing configuration file; quitting"
     return 1
 }
@@ -170,7 +172,8 @@ $password = ($existingConfig | Select-String 'password\s?=\s?(\S+)').Matches.Gro
 
 if ($password) {
     Write-Output "[*] Found password [hidden] in existing configuration file"
-} else {
+}
+else {
     Write-Output "[!] Password not found in existing configuration file; quitting"
     return 1
 }
@@ -230,6 +233,7 @@ $content += ""
 $content += "check_printers=check_printers.vbs"
 $content += "check_time=check_windows_time.bat time.google.com 120 300"
 $content += "check_wsb=check_wsb.ps1"
+$content += 'check_icmp=check_icmp.ps1 -Targets $ARG1$'
 $content += ""
 $content += "[/settings/NSCA/client/targets/default]"
 $content += ""
@@ -268,9 +272,9 @@ $content += ''
 $content += 'interval=5m'
 $content += 'alias=network'
 $content += 'command=check_network warn=0.3G crit=0.6G'
-$content += ''
 
 if ((Get-WmiObject -Class Win32_ComputerSystem).Manufacturer -match 'Dell') {
+    $content += ''
     $content += '[/settings/scheduler/schedules/omsa]'
     $content += ''
     $content += 'interval=2h'
@@ -279,6 +283,7 @@ if ((Get-WmiObject -Class Win32_ComputerSystem).Manufacturer -match 'Dell') {
 }
 
 if (Get-WmiObject -Query "SELECT * FROM Win32_Printer WHERE Shared=True") {
+    $content += ''
     $content += '[/settings/scheduler/schedules/printers]'
     $content += ''
     $content += 'interval=1h'
@@ -287,6 +292,7 @@ if (Get-WmiObject -Query "SELECT * FROM Win32_Printer WHERE Shared=True") {
 }
 
 if ((Get-WmiObject -Class Win32_ComputerSystem).DomainRole -eq 5) {
+    $content += ''
     $content += '[/settings/scheduler/schedules/time]'
     $content += ''
     $content += 'interval=24h'
