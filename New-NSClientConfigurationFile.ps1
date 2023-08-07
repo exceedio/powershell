@@ -23,6 +23,10 @@
 
     iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/New-NSClientConfigurationFile.ps1'))
 
+.EXAMPLE
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/New-NSClientConfigurationFile.ps1'))
+
 .NOTES
 
     Filename : New-NSClientConfigurationFile.ps1
