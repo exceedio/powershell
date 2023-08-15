@@ -328,7 +328,7 @@ class User {
             -Company $this.Configuration.Company `
             -Country $this.Configuration.Country `
             -Department $this.Department `
-            -Description $this.Fullname() `
+            -Description $this.Title `
             -DisplayName $this.Fullname() `
             -EmailAddress $this.EmailAddress() `
             -Enabled $true `
