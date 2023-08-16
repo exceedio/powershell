@@ -92,31 +92,31 @@
 
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'Desired username all lower case')]
     [string]
     $Username,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'Username of the manager/supervisor of new user')]
     [string]
     $UsernameOfManager,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'Username of an existing user who holds a similar job role/function as the new user')]
     [string]
     $UsernameOfSimilar,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'First name of the new user')]
     [string]
     $Firstname,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'Last name of the new user')]
     [string]
     $Lastname,
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory, HelpMessage = 'Department of the new user (e.g. Sales, Support)')]
     [string]
     $Department,
-    [Parameter()]
+    [Parameter(Mandatory, HelpMessage = 'Job title of the new user (e.g. Director of Sales)')]
     [string]
     $Title,
-    [Parameter()]
+    [Parameter(Mandatory, HelpMessage = 'Office phone number of the new user (e.g. 831-555-1212)')]
     [string]
     $Phone,
-    [Parameter()]
+    [Parameter(Mandatory, HelpMessage = 'Mobile phone number of the new user (e.g. 831-555-1212) or leave blank')]
     [string]
     $Mobile,
     [Parameter()]
