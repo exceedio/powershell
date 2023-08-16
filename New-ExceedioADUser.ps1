@@ -121,7 +121,7 @@ param (
     $Mobile,
     [Parameter()]
     [string]
-    $ConfigurationFile = "$PSScriptRoot\New-ExceedioADUser.json"
+    $ConfigurationFile = ".\New-ExceedioADUser.json"
 )
 
 class Configuration {
