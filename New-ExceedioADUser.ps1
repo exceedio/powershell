@@ -334,6 +334,7 @@ class User {
             -Enabled $true `
             -GivenName $this.Firstname `
             -Initials $this.Initials() `
+            -Manager $this.Manager `
             -MobilePhone $this.Mobile `
             -Name $this.Fullname() `
             -OfficePhone $this.Phone `
