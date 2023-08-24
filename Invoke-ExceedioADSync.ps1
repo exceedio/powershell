@@ -7,8 +7,32 @@ param (
     [string]
     $AzureApiVersion = '2022-11-02',
     [Parameter()]
+    [string]
+    $AzureStorageAccount = $env:AZSTORAGEACCOUNT,
+    [Parameter()]
+    [string]
+    $AzureQueueName = $env:AZQUEUENAME,
+    [Parameter()]
+    [string]
+    $AzureSasToken = $env:AZSASTOKEN,
+    [Parameter()]
+    [string]
+    $ActiveDirectoryServer = $env:ADSERVER,
+    [Parameter()]
+    [string]
+    $ActiveDirectoryUsersContainer = $env:ADUSERSCONTAINER,
+    [Parameter()]
+    [string]
+    $AzureADConnectServer = $env:AZADCONNECTSERVER,
+    [Parameter()]
+    [string]
+    $UsersFolderPath = $env:USERSFOLDERPATH,
+    [Parameter()]
     [int]
-    $MinimumPasswordLength = 14
+    $MinimumPasswordLength = 14,
+    [Parameter()]
+    [switch]
+    $Preflight = $false
 )
 
 function Write-Banner {
@@ -17,15 +41,6 @@ function Write-Banner {
     Write-Host '  _.|o o  |_   ) )'
     Write-Host '-(((---(((------- '  
     Write-Host ''    
-}
-
-function New-UserFolder {
-    if (-not (Test-Path $path)) {
-        Write-Host "Creating user folder at $path and setting permissions"
-        New-Item -ItemType Directory -Path $path | Out-Null
-        icacls.exe "$path" /setowner $this.Username /T /C
-        icacls.exe "$path" /reset /T /C
-    }
 }
 
 function Get-StrongRandomPassword {
@@ -51,36 +66,48 @@ function Get-StrongRandomPassword {
     $password
 }
 
-if (-not ($azstorageaccount = $env:AZSTORAGEACCOUNT)) {
-    Write-Warning -Message "Missing environment variable AZSTORAGEACCOUNT"
+if (-not ($AzureStorageAccount)) {
+    Write-Warning "Azure storage account must be provided using -AzureStorageAccount or the 'AZSTORAGEACCOUNT' environment variable"
     return
 }
 
-if (-not ($azqueuename = $env:AZQUEUENAME)) {
-    Write-Warning -Message "Missing environment variable AZQUEUENAME"
+if (-not ($AzureQueueName)) {
+    Write-Warning "Azure queue name must be provided using -AzureQueueName or the 'AZQUEUENAME' environment variable"
     return
 }
 
-if (-not ($azsastoken = $env:AZSASTOKEN)) {
-    Write-Warning -Message "Missing environment variable AZSASTOKEN"
+if (-not ($AzureSasToken)) {
+    Write-Warning -Message "Azure SAS token must be provided using -AzureSasToken or the 'AZSASTOKEN' environment variable"
     return
 }
 
-if (-not ($adserver = $env:ADSERVER)) {
-    Write-Warning -Message "Missing environment variable ADSERVER"
+if (-not ($ActiveDirectoryServer)) {
+    $ActiveDirectoryServer = (Get-ADDomain).PDCEmulator
+}
+
+if (-not ($ActiveDirectoryUsersContainer)) {
+    $ActiveDirectoryUsersContainer = (Get-ADDomain).UsersContainer
+}
+
+if (-not ($AzureADConnectServer)) {
+    if (Get-Module -Name ADSync -ListAvailable) {
+        $AzureADConnectServer = [System.Net.Dns]::GetHostByName($env:computerName).HostName
+    }
+}
+
+if ($Preflight) {
+    Write-Banner
+    Write-Output "Azure storage account name.......... : $AzureStorageAccount"
+    Write-Output "Azure storage queue name............ : $AzureQueueName"
+    Write-Output "Azure storage shared access token... : $(-join $AzureSasToken[0..40])..."
+    Write-Output "Active directory server............. : $ActiveDirectoryServer"
+    Write-Output "Active directory users container.... : $ActiveDirectoryUsersContainer"
+    Write-Output "Azure AD Connect server............. : $AzureADConnectServer"
+    Write-Output "Users folder path................... : $UsersFolderPath"
     return
 }
 
-if (-not ($adusersoupath = $env:ADUSERSOUPATH)) {
-    Write-Warning -Message "Missing environment variable ADUSERSOUPATH"
-    return
-}
-
-if (-not ($azadsyncserver = $env:AZADSYNCSERVER)) {
-    Write-Warning -Message "Missing environment variable AZADSYNCSERVER; sync cycle will not be forced"
-}
-
-$queueuri = "https://$azstorageaccount.queue.core.windows.net/$azqueuename/messages"
+$queueuri = "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages"
 $headers = @{
     "x-ms-date"    = (Get-Date).ToUniversalTime().ToString("R")
     "x-ms-version" = $AzureApiVersion
@@ -88,14 +115,13 @@ $headers = @{
 
 try {
     
-    $response = Invoke-RestMethod -Uri "$queueuri$azsastoken" -Headers $headers -Method Get -UseBasicParsing
+    $response = Invoke-RestMethod -Uri "$queueuri$AzureSasToken" -Headers $headers -Method Get -UseBasicParsing
     
     #
-    # The following code is to deal specifically with the fact that the XML returned
-    # from the Azure REST API related to storage queues includes a BOM that throws off
-    # PowerShell XML decoding. Apparently this will be fixed in PowerShell 7.4 but we're
-    # targeting 5.1 here so we have to take extra measures to remove the BOM before
-    # parsing the response into an XML object
+    # The following code is to deal specifically with the fact that the XML returned from the Azure
+    # REST API related to storage queues includes a BOM that throws off PowerShell XML decoding.
+    # Apparently this will be fixed in PowerShell 7.4 but we're targeting 5.1 so we have to take
+    # extra measures to remove the BOM before parsing the response into an XML object.
     # 
     $bytes = [System.Text.Encoding]::Unicode.GetBytes($response)
     $bytes = $bytes[6..($bytes.Length - 1)]
@@ -106,7 +132,7 @@ try {
         Write-Output "Found $($messages.Count) user add message(s) in the queue"
     }
     else {
-        Write-Output "No user add messages found in the queue"
+        Write-Output "No messages found in queue; nothing to do; exiting"
         return
     }
 
@@ -114,9 +140,9 @@ try {
         
         $user = $message.MessageText | ConvertFrom-Json
         $pass = Get-StrongRandomPassword
-        $managerSearchFilter = "CN=$($user.Manager),$($adusersoupath)"
+        $managerSearchFilter = "CN=$($user.Manager),$ActiveDirectoryUsersContainer"
         Write-Output "Looking up manager at $managerSearchFilter"
-        $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $adserver
+        $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $ActiveDirectoryServer
         Write-Output "Creating Active Directory user $($user.Firstname) $($user.Lastname) ($($user.Email)) with password $pass"
         New-ADUser `
             -AccountPassword ($pass | ConvertTo-SecureString -AsPlainText -Force) `
@@ -136,11 +162,12 @@ try {
             -Manager $manager `
             -MobilePhone $user.Mobile `
             -Name "$($user.Firstname) $($user.Lastname)" `
+            -Office $user.Office `
             -OfficePhone $user.Phone `
             -Organization $user.Company `
             -PasswordNeverExpires $false `
             -PasswordNotRequired $false `
-            -Path $adusersoupath `
+            -Path $ActiveDirectoryUsersContainer `
             -PostalCode $user.Postal `
             -SamAccountName $user.Username `
             -State $user.State `
@@ -148,9 +175,9 @@ try {
             -Surname $user.Lastname `
             -Title $user.Title `
             -UserPrincipalName $user.Email
-        $similarSearchFilter = "CN=$($user.Similar),$($adusersoupath)"
+        $similarSearchFilter = "CN=$($user.Similar),$ActiveDirectoryUsersContainer"
         Write-Output "Looking up similar user at $similarSearchFilter"
-        if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $adserver) {
+        if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $ActiveDirectoryServer) {
             $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username)
             $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership
             $missingGroupMembership = Compare-Object -ReferenceObject $currentGroupMembership -DifferenceObject $similarGroupMembership | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }
@@ -159,14 +186,22 @@ try {
                 Add-ADGroupMember -Identity $group -Members $user.Username
             }
         }
+
+        if (Test-Path $UsersFolderPath) {
+            $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
+            Write-Host "Creating user folder at $path and setting permissions"
+            New-Item -ItemType Directory -Path $path | Out-Null
+            icacls.exe "$path" /setowner $user.Username /T /C
+            icacls.exe "$path" /reset /T /C
+        }    
         
-        Write-Output "Removing message $($message.MessageId) from $azqueuename using receipt $($message.PopReceipt)"
-        Invoke-RestMethod -Uri "$queueuri/$($message.MessageId)$azsastoken&popreceipt=$($message.PopReceipt)" -Headers $headers -Method Delete -UseBasicParsing | Out-Null
+        Write-Output "Removing message $($message.MessageId) from $AzureQueueName using receipt $($message.PopReceipt)"
+        Invoke-RestMethod -Uri "$queueuri/$($message.MessageId)$AzureSasToken&popreceipt=$($message.PopReceipt)" -Headers $headers -Method Delete -UseBasicParsing | Out-Null
     }
 
-    if ($azadsyncserver) {
-        Write-Output "Initiating sync cycle for Azure AD Connect on $azadsyncserver"
-        $command = Invoke-Command -ComputerName $azadsyncserver -ScriptBlock { Start-ADSyncSyncCycle }
+    if ($AzureADConnectServer) {
+        Write-Output "Initiating sync cycle for Azure AD Connect on $AzureADConnectServer"
+        $command = Invoke-Command -ComputerName $AzureADConnectServer -ScriptBlock { Start-ADSyncSyncCycle }
         Write-Host "Synchronization result: $($command.Result)"
     }
 
