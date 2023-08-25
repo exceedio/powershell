@@ -28,22 +28,55 @@ param (
     [string]
     $UsersFolderPath = $env:USERSFOLDERPATH,
     [Parameter()]
+    [string]
+    $ProgramDataPath = (Join-Path $env:ProgramData 'Exceedio'),
+    [Parameter()]
     [int]
     $MinimumPasswordLength = 14,
     [Parameter()]
     [switch]
-    $Preflight = $false
+    $Preflight = $false,
+    [Parameter()]
+    [switch]
+    $Setup = $false
 )
 
 function Write-Banner {
-    Write-Host ''
-    Write-Host '    |\__/,|   (`\ '
-    Write-Host '  _.|o o  |_   ) )'
-    Write-Host '-(((---(((------- '  
-    Write-Host ''    
+    Write-Output ''
+    Write-Output '    |\__/,|   (`\ '
+    Write-Output '  _.|o o  |_   ) )'
+    Write-Output '-(((---(((------- '  
+    Write-Output ''    
 }
 
-function Get-StrongRandomPassword {
+function Write-Preflight {
+    Write-Output "Azure storage account name.......... : $AzureStorageAccount"
+    Write-Output "Azure storage queue name............ : $AzureQueueName"
+    Write-Output "Azure storage shared access token... : $(-join $AzureSasToken[0..40])..."
+    Write-Output "Active directory server............. : $ActiveDirectoryServer"
+    Write-Output "Active directory users container.... : $ActiveDirectoryUsersContainer"
+    Write-Output "Azure AD Connect server (optional).. : $AzureADConnectServer"
+    Write-Output "Users folder path (optional)........ : $UsersFolderPath"
+    Write-Output ""
+}
+
+function Get-RunningElevated {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    $elevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    return ($elevated -or $identity.IsSystem)
+}
+
+function New-ProgramDataFolder {
+    if (-not (Test-Path $ProgramDataPath)) {
+        New-Item -ItemType Directory -Path $ProgramDataPath -Force
+        & icacls.exe $ProgramDataPath /inheritance:r | Out-Null
+        & icacls.exe $ProgramDataPath /grant "SYSTEM:(OI)(CI)F" | Out-Null
+        & icacls.exe $ProgramDataPath /grant "Administrators:(OI)(CI)F" | Out-Null
+    }
+}
+
+function New-StrongRandomPassword {
 
     $uchars = 'ABCDEFGHJKMNPQRTUVWXYZ'.ToCharArray()
     $lchars = 'abcdefghjkmnpqrtuvwxyz'.ToCharArray()
@@ -66,26 +99,33 @@ function Get-StrongRandomPassword {
     $password
 }
 
-if (-not ($AzureStorageAccount)) {
+if (-not ($AzureStorageAccount) -and -not ($Setup -or $Preflight)) {
     Write-Warning "Azure storage account must be provided using -AzureStorageAccount or the 'AZSTORAGEACCOUNT' environment variable"
     return
 }
 
-if (-not ($AzureQueueName)) {
+if (-not ($AzureQueueName) -and -not ($Setup -or $Preflight)) {
     Write-Warning "Azure queue name must be provided using -AzureQueueName or the 'AZQUEUENAME' environment variable"
     return
 }
 
-if (-not ($AzureSasToken)) {
+if (-not ($AzureSasToken) -and -not ($Setup -or $Preflight)) {
     Write-Warning -Message "Azure SAS token must be provided using -AzureSasToken or the 'AZSASTOKEN' environment variable"
     return
 }
 
-if (-not ($ActiveDirectoryServer)) {
+try {
+    $script:activeDirectoryDomain = Get-ADDomain
+}
+catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
+    Write-Warning "Could not determine the current Active Directory domain. Are we on a domain-joined machine?"
+}
+
+if ($script:activeDirectoryDomain -and -not ($ActiveDirectoryServer)) {
     $ActiveDirectoryServer = (Get-ADDomain).PDCEmulator
 }
 
-if (-not ($ActiveDirectoryUsersContainer)) {
+if ($script:activeDirectoryDomain -and -not ($ActiveDirectoryUsersContainer)) {
     $ActiveDirectoryUsersContainer = (Get-ADDomain).UsersContainer
 }
 
@@ -95,15 +135,51 @@ if (-not ($AzureADConnectServer)) {
     }
 }
 
+if ($Setup) {
+    if (-not (Get-RunningElevated)) {
+        Write-Warning "Setup requires running in an elevated session. Try again."
+        return
+    }
+    Write-Banner
+    Write-Preflight
+    Write-Output "Answer the questions below. Leave blank to keep existing setting."
+    Write-Output ""
+    if ($response = Read-Host "Azure storage account name") {
+        $env:AZSTORAGEACCOUNT = $response
+        [Environment]::SetEnvironmentVariable('AZSTORAGEACCOUNT', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Azure storage queue name") {
+        Write-Verbose "Setting AZQUEUENAME"
+        $env:AZQUEUENAME = $response
+        [Environment]::SetEnvironmentVariable('AZQUEUENAME', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Azure storage shared access signature token") {
+        $env:AZSASTOKEN = $response
+        [Environment]::SetEnvironmentVariable('AZSASTOKEN', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Active Directory server") {
+        $env:ADSERVER = $response
+        [Environment]::SetEnvironmentVariable('ADSERVER', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Active Directory users container (OU)") {
+        $env:ADUSERSCONTAINER = $response
+        [Environment]::SetEnvironmentVariable('ADUSERSCONTAINER', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Azure AD Connect server") {
+        $env:AZADCONNECTSERVER = $response
+        [Environment]::SetEnvironmentVariable('AZADCONNECTSERVER', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    if ($response = Read-Host "Root of user home folders in \\server\share\folder format") {
+        $env:USERSFOLDERPATH = $response
+        [Environment]::SetEnvironmentVariable('USERSFOLDERPATH', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
+    New-ProgramDataFolder
+    return
+}
+
 if ($Preflight) {
     Write-Banner
-    Write-Output "Azure storage account name.......... : $AzureStorageAccount"
-    Write-Output "Azure storage queue name............ : $AzureQueueName"
-    Write-Output "Azure storage shared access token... : $(-join $AzureSasToken[0..40])..."
-    Write-Output "Active directory server............. : $ActiveDirectoryServer"
-    Write-Output "Active directory users container.... : $ActiveDirectoryUsersContainer"
-    Write-Output "Azure AD Connect server............. : $AzureADConnectServer"
-    Write-Output "Users folder path................... : $UsersFolderPath"
+    Write-Preflight
     return
 }
 
@@ -139,7 +215,7 @@ try {
     foreach ($message in $messages) {
         
         $user = $message.MessageText | ConvertFrom-Json
-        $pass = Get-StrongRandomPassword
+        $pass = New-StrongRandomPassword
         $managerSearchFilter = "CN=$($user.Manager),$ActiveDirectoryUsersContainer"
         Write-Output "Looking up manager at $managerSearchFilter"
         $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $ActiveDirectoryServer
@@ -189,13 +265,16 @@ try {
 
         if (Test-Path $UsersFolderPath) {
             $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
-            Write-Host "Creating user folder at $path and setting permissions"
+            Write-Output "Creating user folder at $path and setting permissions"
             New-Item -ItemType Directory -Path $path | Out-Null
-            icacls.exe "$path" /setowner $user.Username /T /C
-            icacls.exe "$path" /reset /T /C
-        }    
+            icacls.exe "$path" /setowner $user.Username /T /C | Out-Null
+            icacls.exe "$path" /reset /T /C | Out-Null
+        }
+
+        Write-Output "Saving generated credentials to $ProgramDataPath"
+        $pass | Set-Content -Path (Join-Path $ProgramDataPath "$($user.Username).txt")
         
-        Write-Output "Removing message $($message.MessageId) from $AzureQueueName using receipt $($message.PopReceipt)"
+        Write-Output "Removing message from '$AzureQueueName' using receipt $($message.PopReceipt)"
         Invoke-RestMethod -Uri "$queueuri/$($message.MessageId)$AzureSasToken&popreceipt=$($message.PopReceipt)" -Headers $headers -Method Delete -UseBasicParsing | Out-Null
     }
 
