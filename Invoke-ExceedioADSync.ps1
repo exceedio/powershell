@@ -29,6 +29,9 @@ param (
     $UsersFolderPath = $env:USERSFOLDERPATH,
     [Parameter()]
     [string]
+    $Company = $env:COMPANY,
+    [Parameter()]
+    [string]
     $ProgramDataPath = (Join-Path $env:ProgramData 'Exceedio'),
     [Parameter()]
     [int]
@@ -50,6 +53,7 @@ function Write-Banner {
 }
 
 function Write-Preflight {
+    Write-Output "Company............................. : $Company"
     Write-Output "Azure storage account name.......... : $AzureStorageAccount"
     Write-Output "Azure storage queue name............ : $AzureQueueName"
     Write-Output "Azure storage shared access token... : $(-join $AzureSasToken[0..40])..."
@@ -76,6 +80,55 @@ function New-ProgramDataFolder {
     }
 }
 
+function Invoke-QueueRestMethod {
+    param (
+        [Parameter(Mandatory)]
+        [string]
+        [ValidateSet('Peek', 'Get', 'Delete')]
+        $Operation,
+        [Parameter()]
+        [string]
+        $MessageId,
+        [Parameter()]
+        [string]
+        $PopReceipt,
+        [Parameter()]
+        [Microsoft.PowerShell.Commands.WebRequestMethod] $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get
+    )
+
+    $headers = @{
+        "x-ms-date"    = (Get-Date).ToUniversalTime().ToString("R")
+        "x-ms-version" = $AzureApiVersion
+    }
+
+    $uri = "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages/"
+    
+    if ($MessageId) {
+        $uri += $MessageId
+    }
+    
+    $uri += $AzureSasToken
+
+    if ($Operation -eq 'Peek') {
+        $uri += '&peekonly=true'
+    }
+
+    if (@('Peek', 'Get') -contains $Operation) {
+        $uri += '&numofmessages=1'
+    }
+
+    if ($Operation -eq 'Delete') {
+        $uri += "&popreceipt=$PopReceipt"
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Delete
+    }
+    
+    $response = Invoke-RestMethod -Uri $uri -Headers $headers -Method $Method -UseBasicParsing
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($Response)
+    $bytes = $bytes[6..($bytes.Length - 1)]
+    $decoded = [System.Text.Encoding]::Unicode.GetString($bytes)
+    return [xml] $decoded
+}
+
 function New-StrongRandomPassword {
 
     $uchars = 'ABCDEFGHJKMNPQRTUVWXYZ'.ToCharArray()
@@ -97,6 +150,78 @@ function New-StrongRandomPassword {
     $password = $password | Get-Random -Count $password.Length
     $password = -join $password
     $password
+}
+
+function New-User {
+    param (
+        [Parameter]
+        [xml]
+        $Message
+    )
+    $user = $Message.MessageText | ConvertFrom-Json
+    $pass = New-StrongRandomPassword
+    $managerSearchFilter = "CN=$($user.Manager),$ActiveDirectoryUsersContainer"
+    Write-Output "Looking up manager at $managerSearchFilter"
+    $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $ActiveDirectoryServer
+    Write-Output "Creating Active Directory user $($user.Firstname) $($user.Lastname) ($($user.Email)) with password $pass"
+    New-ADUser `
+        -AccountPassword ($pass | ConvertTo-SecureString -AsPlainText -Force) `
+        -AllowReversiblePasswordEncryption $false `
+        -CannotChangePassword $false `
+        -ChangePasswordAtLogon $false `
+        -City $user.City `
+        -Company $user.Company `
+        -Country $user.Country `
+        -Department $user.Department `
+        -Description $user.Title `
+        -DisplayName "$($user.Firstname) $($user.Lastname)" `
+        -EmailAddress $user.Email `
+        -Enabled $true `
+        -GivenName $user.Firstname `
+        -Initials "$($user.Firstname[0])$($user.Lastname[0])" `
+        -Manager $manager `
+        -MobilePhone $user.Mobile `
+        -Name "$($user.Firstname) $($user.Lastname)" `
+        -Office $user.Office `
+        -OfficePhone $user.Phone `
+        -Organization $user.Company `
+        -PasswordNeverExpires $false `
+        -PasswordNotRequired $false `
+        -Path $ActiveDirectoryUsersContainer `
+        -PostalCode $user.Postal `
+        -SamAccountName $user.Username `
+        -State $user.State `
+        -StreetAddress $user.Address `
+        -Surname $user.Lastname `
+        -Title $user.Title `
+        -UserPrincipalName $user.Email
+    $similarSearchFilter = "CN=$($user.Similar),$ActiveDirectoryUsersContainer"
+    Write-Output "Looking up similar user at $similarSearchFilter"
+    if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $ActiveDirectoryServer) {
+        $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username)
+        $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership
+        $missingGroupMembership = Compare-Object -ReferenceObject $currentGroupMembership -DifferenceObject $similarGroupMembership | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }
+        foreach ($group in $missingGroupMembership) {
+            Write-Output "Adding $($user.Firstname) $($user.Lastname) to group '$($group.Name)'"
+            Add-ADGroupMember -Identity $group -Members $user.Username
+        }
+    }
+
+    if (Test-Path $UsersFolderPath) {
+        $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
+        Write-Output "Creating user folder at $path and setting permissions"
+        New-Item -ItemType Directory -Path $path | Out-Null
+        icacls.exe "$path" /setowner $user.Username /T /C | Out-Null
+        icacls.exe "$path" /reset /T /C | Out-Null
+    }
+
+    Write-Output "Saving generated credentials to $ProgramDataPath"
+    $pass | Set-Content -Path (Join-Path $ProgramDataPath "$($user.Username).txt")
+}
+
+if (-not ($Company) -and -not ($Setup -or $Preflight)) {
+    Write-Warning "Company name must be provided using -Company or the 'COMPANY' environment variable"
+    return
 }
 
 if (-not ($AzureStorageAccount) -and -not ($Setup -or $Preflight)) {
@@ -144,6 +269,10 @@ if ($Setup) {
     Write-Preflight
     Write-Output "Answer the questions below. Leave blank to keep existing setting."
     Write-Output ""
+    if ($response = Read-Host "Company name [$Company]") {
+        $env:COMPANY = $response
+        [Environment]::SetEnvironmentVariable('COMPANY', $response, [System.EnvironmentVariableTarget]::Machine)
+    }
     if ($response = Read-Host "Azure storage account name") {
         $env:AZSTORAGEACCOUNT = $response
         [Environment]::SetEnvironmentVariable('AZSTORAGEACCOUNT', $response, [System.EnvironmentVariableTarget]::Machine)
@@ -183,99 +312,34 @@ if ($Preflight) {
     return
 }
 
-$queueuri = "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages"
-$headers = @{
-    "x-ms-date"    = (Get-Date).ToUniversalTime().ToString("R")
-    "x-ms-version" = $AzureApiVersion
-}
+$xml = Invoke-QueueRestMethod -Operation Peek
 
-try {
+if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
     
-    $response = Invoke-RestMethod -Uri "$queueuri$AzureSasToken" -Headers $headers -Method Get -UseBasicParsing
+    Write-Output "Found $($messages.Count) user add message(s) in the queue"
+
+    foreach ($peekedmessage in $peekedmessages) {
     
-    #
-    # The following code is to deal specifically with the fact that the XML returned from the Azure
-    # REST API related to storage queues includes a BOM that throws off PowerShell XML decoding.
-    # Apparently this will be fixed in PowerShell 7.4 but we're targeting 5.1 so we have to take
-    # extra measures to remove the BOM before parsing the response into an XML object.
-    # 
-    $bytes = [System.Text.Encoding]::Unicode.GetBytes($response)
-    $bytes = $bytes[6..($bytes.Length - 1)]
-    $decoded = [System.Text.Encoding]::Unicode.GetString($bytes)
-    $xml = [xml] $decoded
+        $user = $peekedmessage.MessageText | ConvertFrom-Json
 
-    if ($messages = @($xml.QueueMessagesList.QueueMessage)) {
-        Write-Output "Found $($messages.Count) user add message(s) in the queue"
-    }
-    else {
-        Write-Output "No messages found in queue; nothing to do; exiting"
-        return
-    }
+        if ($user.Company -eq $Company) {
 
-    foreach ($message in $messages) {
-        
-        $user = $message.MessageText | ConvertFrom-Json
-        $pass = New-StrongRandomPassword
-        $managerSearchFilter = "CN=$($user.Manager),$ActiveDirectoryUsersContainer"
-        Write-Output "Looking up manager at $managerSearchFilter"
-        $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $ActiveDirectoryServer
-        Write-Output "Creating Active Directory user $($user.Firstname) $($user.Lastname) ($($user.Email)) with password $pass"
-        New-ADUser `
-            -AccountPassword ($pass | ConvertTo-SecureString -AsPlainText -Force) `
-            -AllowReversiblePasswordEncryption $false `
-            -CannotChangePassword $false `
-            -ChangePasswordAtLogon $false `
-            -City $user.City `
-            -Company $user.Company `
-            -Country $user.Country `
-            -Department $user.Department `
-            -Description $user.Title `
-            -DisplayName "$($user.Firstname) $($user.Lastname)" `
-            -EmailAddress $user.Email `
-            -Enabled $true `
-            -GivenName $user.Firstname `
-            -Initials "$($user.Firstname[0])$($user.Lastname[0])" `
-            -Manager $manager `
-            -MobilePhone $user.Mobile `
-            -Name "$($user.Firstname) $($user.Lastname)" `
-            -Office $user.Office `
-            -OfficePhone $user.Phone `
-            -Organization $user.Company `
-            -PasswordNeverExpires $false `
-            -PasswordNotRequired $false `
-            -Path $ActiveDirectoryUsersContainer `
-            -PostalCode $user.Postal `
-            -SamAccountName $user.Username `
-            -State $user.State `
-            -StreetAddress $user.Address `
-            -Surname $user.Lastname `
-            -Title $user.Title `
-            -UserPrincipalName $user.Email
-        $similarSearchFilter = "CN=$($user.Similar),$ActiveDirectoryUsersContainer"
-        Write-Output "Looking up similar user at $similarSearchFilter"
-        if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $ActiveDirectoryServer) {
-            $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username)
-            $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership
-            $missingGroupMembership = Compare-Object -ReferenceObject $currentGroupMembership -DifferenceObject $similarGroupMembership | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }
-            foreach ($group in $missingGroupMembership) {
-                Write-Output "Adding $($user.Firstname) $($user.Lastname) to group '$($group.Name)'"
-                Add-ADGroupMember -Identity $group -Members $user.Username
+            Write-Output "Message is intended for us; handling it"
+
+            $messages = Invoke-QueueRestMethod -Operation Get
+
+            foreach ($message in $messages) {
+
+                Write-Output "Creating user"
+                Start-Sleep -Seconds 5
+                #New-User -Message $message
+
+                $id = $message.MessageId
+                $receipt = $message.PopReceipt
+                Write-Output "Removing message $id from '$AzureQueueName' using receipt $receipt"
+                Invoke-QueueRestMethod -Operation Delete -MessageId $id -PopReceipt $receipt
             }
         }
-
-        if (Test-Path $UsersFolderPath) {
-            $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
-            Write-Output "Creating user folder at $path and setting permissions"
-            New-Item -ItemType Directory -Path $path | Out-Null
-            icacls.exe "$path" /setowner $user.Username /T /C | Out-Null
-            icacls.exe "$path" /reset /T /C | Out-Null
-        }
-
-        Write-Output "Saving generated credentials to $ProgramDataPath"
-        $pass | Set-Content -Path (Join-Path $ProgramDataPath "$($user.Username).txt")
-        
-        Write-Output "Removing message from '$AzureQueueName' using receipt $($message.PopReceipt)"
-        Invoke-RestMethod -Uri "$queueuri/$($message.MessageId)$AzureSasToken&popreceipt=$($message.PopReceipt)" -Headers $headers -Method Delete -UseBasicParsing | Out-Null
     }
 
     if ($AzureADConnectServer) {
@@ -286,6 +350,6 @@ try {
 
     Write-Output "Finished"
 }
-catch {
-    Write-Warning "Error occured, please investigate: $_"
+else {
+    Write-Output "No messages found in queue; nothing to do; exiting"
 }
