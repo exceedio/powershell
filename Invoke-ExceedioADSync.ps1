@@ -80,50 +80,50 @@ function New-ProgramDataFolder {
     }
 }
 
+function Receive-AzureStorageQueueMessage {
+    Invoke-QueueRestMethod `
+        -Method Get `
+        -Uri "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages$AzureSasToken&numofmessages=1&peekonly=true"
+}
+
+function Get-AzureStorageQueueMessage {
+    Invoke-QueueRestMethod `
+        -Method Get `
+        -Uri "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages$AzureSasToken&numofmessages=1"
+}
+
+function Remove-AzureStorageQueueMessage {
+    param (
+        [Parameter(Mandatory)]
+        [string]
+        $MessageId,
+        [Parameter(Mandatory)]
+        [string]
+        $Receipt
+    )
+    Invoke-QueueRestMethod `
+        -Method Delete `
+        -Uri "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages/$MessageId$AzureSasToken&popreceipt=$Receipt"
+}
+
 function Invoke-QueueRestMethod {
     param (
         [Parameter(Mandatory)]
         [string]
-        [ValidateSet('Peek', 'Get', 'Delete')]
-        $Operation,
+        $Uri,
         [Parameter()]
-        [string]
-        $MessageId,
-        [Parameter()]
-        [string]
-        $PopReceipt,
-        [Parameter()]
-        [Microsoft.PowerShell.Commands.WebRequestMethod] $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get
+        [Microsoft.PowerShell.Commands.WebRequestMethod]
+        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Get
     )
 
     $headers = @{
         "x-ms-date"    = (Get-Date).ToUniversalTime().ToString("R")
         "x-ms-version" = $AzureApiVersion
     }
-
-    $uri = "https://$AzureStorageAccount.queue.core.windows.net/$AzureQueueName/messages/"
     
-    if ($MessageId) {
-        $uri += $MessageId
-    }
-    
-    $uri += $AzureSasToken
-
-    if ($Operation -eq 'Peek') {
-        $uri += '&peekonly=true'
-    }
-
-    if (@('Peek', 'Get') -contains $Operation) {
-        $uri += '&numofmessages=1'
-    }
-
-    if ($Operation -eq 'Delete') {
-        $uri += "&popreceipt=$PopReceipt"
-        $Method = [Microsoft.PowerShell.Commands.WebRequestMethod]::Delete
-    }
-    
-    $response = Invoke-RestMethod -Uri $uri -Headers $headers -Method $Method -UseBasicParsing
-    $bytes = [System.Text.Encoding]::Unicode.GetBytes($Response)
+    Write-Debug "Calling $Uri using method $Method"
+    $response = Invoke-RestMethod -Uri $Uri -Headers $headers -Method $Method -UseBasicParsing
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($response)
     $bytes = $bytes[6..($bytes.Length - 1)]
     $decoded = [System.Text.Encoding]::Unicode.GetString($bytes)
     return [xml] $decoded
@@ -161,9 +161,9 @@ function New-User {
     $user = $Message.MessageText | ConvertFrom-Json
     $pass = New-StrongRandomPassword
     $managerSearchFilter = "CN=$($user.Manager),$ActiveDirectoryUsersContainer"
-    Write-Output "Looking up manager at $managerSearchFilter"
+    Write-Information "Looking up manager at $managerSearchFilter"
     $manager = Get-ADUser -Filter { distinguishedName -eq $managerSearchFilter } -Server $ActiveDirectoryServer
-    Write-Output "Creating Active Directory user $($user.Firstname) $($user.Lastname) ($($user.Email)) with password $pass"
+    Write-Information "Creating Active Directory user $($user.Firstname) $($user.Lastname) ($($user.Email)) with password $pass"
     New-ADUser `
         -AccountPassword ($pass | ConvertTo-SecureString -AsPlainText -Force) `
         -AllowReversiblePasswordEncryption $false `
@@ -196,26 +196,26 @@ function New-User {
         -Title $user.Title `
         -UserPrincipalName $user.Email
     $similarSearchFilter = "CN=$($user.Similar),$ActiveDirectoryUsersContainer"
-    Write-Output "Looking up similar user at $similarSearchFilter"
+    Write-Information "Looking up similar user at $similarSearchFilter"
     if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $ActiveDirectoryServer) {
         $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username)
         $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership
         $missingGroupMembership = Compare-Object -ReferenceObject $currentGroupMembership -DifferenceObject $similarGroupMembership | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }
         foreach ($group in $missingGroupMembership) {
-            Write-Output "Adding $($user.Firstname) $($user.Lastname) to group '$($group.Name)'"
+            Write-Information "Adding $($user.Firstname) $($user.Lastname) to group '$($group.Name)'"
             Add-ADGroupMember -Identity $group -Members $user.Username
         }
     }
 
     if (Test-Path $UsersFolderPath) {
         $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
-        Write-Output "Creating user folder at $path and setting permissions"
+        Write-Information "Creating user folder at $path and setting permissions"
         New-Item -ItemType Directory -Path $path | Out-Null
         icacls.exe "$path" /setowner $user.Username /T /C | Out-Null
         icacls.exe "$path" /reset /T /C | Out-Null
     }
 
-    Write-Output "Saving generated credentials to $ProgramDataPath"
+    Write-Information "Saving generated credentials to $ProgramDataPath"
     $pass | Set-Content -Path (Join-Path $ProgramDataPath "$($user.Username).txt")
 }
 
@@ -239,18 +239,11 @@ if (-not ($AzureSasToken) -and -not ($Setup -or $Preflight)) {
     return
 }
 
-try {
-    $script:activeDirectoryDomain = Get-ADDomain
-}
-catch [Microsoft.ActiveDirectory.Management.ADServerDownException] {
-    Write-Warning "Could not determine the current Active Directory domain. Are we on a domain-joined machine?"
-}
-
-if ($script:activeDirectoryDomain -and -not ($ActiveDirectoryServer)) {
+if (-not ($ActiveDirectoryServer)) {
     $ActiveDirectoryServer = (Get-ADDomain).PDCEmulator
 }
 
-if ($script:activeDirectoryDomain -and -not ($ActiveDirectoryUsersContainer)) {
+if (-not ($ActiveDirectoryUsersContainer)) {
     $ActiveDirectoryUsersContainer = (Get-ADDomain).UsersContainer
 }
 
@@ -312,11 +305,11 @@ if ($Preflight) {
     return
 }
 
-$xml = Invoke-QueueRestMethod -Operation Peek
+$xml = Receive-AzureStorageQueueMessage
 
 if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
     
-    Write-Output "Found $($messages.Count) user add message(s) in the queue"
+    Write-Information "Found $($peekedmessages.Count) message(s) in the queue"
 
     foreach ($peekedmessage in $peekedmessages) {
     
@@ -324,32 +317,36 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
 
         if ($user.Company -eq $Company) {
 
-            Write-Output "Message is intended for us; handling it"
+            Write-Information "Message with id '$($peekedmessage.MessageId)' is intended for us; handling it"
 
-            $messages = Invoke-QueueRestMethod -Operation Get
+            #
+            # here we actually get the message out of the queue so that we are able to
+            # later remove the message from the queue with a receipt; peeking the message
+            # does not give us a receipt that we can use to remvoe the message so this
+            # step is necessary
+            #
+            $xml = Get-AzureStorageQueueMessage
 
-            foreach ($message in $messages) {
+            foreach ($message in @($xml.QueueMessagesList.QueueMessage)) {
 
-                Write-Output "Creating user"
-                Start-Sleep -Seconds 5
-                #New-User -Message $message
+                New-User -Message $message
 
                 $id = $message.MessageId
                 $receipt = $message.PopReceipt
-                Write-Output "Removing message $id from '$AzureQueueName' using receipt $receipt"
-                Invoke-QueueRestMethod -Operation Delete -MessageId $id -PopReceipt $receipt
+                Write-Information "Removing message '$id' from '$AzureQueueName' using receipt '$receipt'"
+                Remove-AzureStorageQueueMessage -MessageId $id -Receipt $receipt | Out-Null
             }
+
+            if ($AzureADConnectServer) {
+                Write-Information "Initiating sync cycle for Azure AD Connect on $AzureADConnectServer"
+                $command = Invoke-Command -ComputerName $AzureADConnectServer -ScriptBlock { Start-ADSyncSyncCycle }
+                Write-Host "Synchronization result: $($command.Result)"
+            }
+        } else {
+            Write-Information "Peeked message with id '$($peekedmessage.MessageId)' was not intended for us; skipping"
         }
     }
-
-    if ($AzureADConnectServer) {
-        Write-Output "Initiating sync cycle for Azure AD Connect on $AzureADConnectServer"
-        $command = Invoke-Command -ComputerName $AzureADConnectServer -ScriptBlock { Start-ADSyncSyncCycle }
-        Write-Host "Synchronization result: $($command.Result)"
-    }
-
-    Write-Output "Finished"
 }
 else {
-    Write-Output "No messages found in queue; nothing to do; exiting"
+    Write-Information "No messages found in queue; nothing to do; exiting"
 }
