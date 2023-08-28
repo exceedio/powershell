@@ -329,7 +329,7 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
 
             foreach ($message in @($xml.QueueMessagesList.QueueMessage)) {
 
-                New-User -Message $message
+                New-User -Message $message -ErrorAction Stop
 
                 $id = $message.MessageId
                 $receipt = $message.PopReceipt
