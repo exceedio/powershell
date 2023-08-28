@@ -154,8 +154,8 @@ function New-StrongRandomPassword {
 
 function New-User {
     param (
-        [Parameter]
-        [xml]
+        [Parameter(Mandatory)]
+        [System.Xml.XmlElement]
         $Message
     )
     $user = $Message.MessageText | ConvertFrom-Json
@@ -338,11 +338,17 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
             }
 
             if ($AzureADConnectServer) {
-                Write-Information "Initiating sync cycle for Azure AD Connect on $AzureADConnectServer"
-                $command = Invoke-Command -ComputerName $AzureADConnectServer -ScriptBlock { Start-ADSyncSyncCycle }
-                Write-Host "Synchronization result: $($command.Result)"
+                Write-Information "Starting sync cycle for Azure AD Connect on $AzureADConnectServer"
+                try {
+                    $command = Invoke-Command -ComputerName $AzureADConnectServer -ScriptBlock { Start-ADSyncSyncCycle }
+                    Write-Information "Synchronization result: $($command.Result)"
+                }
+                catch {
+                    Write-Warning "An error occurred while trying to start a sync cycle on $AzureADConnectServer"
+                }
             }
-        } else {
+        }
+        else {
             Write-Information "Peeked message with id '$($peekedmessage.MessageId)' was not intended for us; skipping"
         }
     }
