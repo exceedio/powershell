@@ -305,6 +305,8 @@ if ($Preflight) {
     return
 }
 
+$InformationPreference = 'Continue'
+
 $xml = Receive-AzureStorageQueueMessage
 
 if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
@@ -356,3 +358,5 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
 else {
     Write-Information "No messages found in queue; nothing to do; exiting"
 }
+
+$InformationPreference = 'SilentlyContinue'
