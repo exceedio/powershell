@@ -210,7 +210,7 @@ function New-User {
 
     if (Test-Path $UsersFolderPath) {
         $sid = '*'
-        $sid += (Get-ADuser $user.Username).SID.Value
+        $sid += (Get-ADuser $user.Username -Server $ActiveDirectoryServer).SID.Value
         $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
         Write-Information "Creating user folder at $path and setting ownership/permissions"
         New-Item -ItemType Directory -Path $path | Out-Null
