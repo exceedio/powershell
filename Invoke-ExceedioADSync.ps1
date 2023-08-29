@@ -194,24 +194,27 @@ function New-User {
         -StreetAddress $user.Address `
         -Surname $user.Lastname `
         -Title $user.Title `
-        -UserPrincipalName $user.Email
+        -UserPrincipalName $user.Email `
+        -Server $ActiveDirectoryServer
     $similarSearchFilter = "CN=$($user.Similar),$ActiveDirectoryUsersContainer"
     Write-Information "Looking up similar user at $similarSearchFilter"
     if ($similar = Get-ADUser -Filter { distinguishedName -eq $similarSearchFilter } -Server $ActiveDirectoryServer) {
-        $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username)
-        $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership
+        $currentGroupMembership = @(Get-ADPrincipalGroupMembership $user.Username -Server $ActiveDirectoryServer)
+        $similarGroupMembership = $similar | Get-ADPrincipalGroupMembership -Server $ActiveDirectoryServer
         $missingGroupMembership = Compare-Object -ReferenceObject $currentGroupMembership -DifferenceObject $similarGroupMembership | Where-Object { $_.SideIndicator -eq '=>' } | ForEach-Object { $_.InputObject }
         foreach ($group in $missingGroupMembership) {
             Write-Information "Adding $($user.Firstname) $($user.Lastname) to group '$($group.Name)'"
-            Add-ADGroupMember -Identity $group -Members $user.Username
+            Add-ADGroupMember -Identity $group -Members $user.Username -Server $ActiveDirectoryServer
         }
     }
 
     if (Test-Path $UsersFolderPath) {
+        $sid = '*'
+        $sid += (Get-ADuser $user.Username).SID.Value
         $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
-        Write-Information "Creating user folder at $path and setting permissions"
+        Write-Information "Creating user folder at $path and setting ownership/permissions"
         New-Item -ItemType Directory -Path $path | Out-Null
-        icacls.exe "$path" /setowner $user.Username /T /C | Out-Null
+        icacls.exe "$path" /setowner $sid /T /C | Out-Null
         icacls.exe "$path" /reset /T /C | Out-Null
     }
 
@@ -266,32 +269,32 @@ if ($Setup) {
         $env:COMPANY = $response
         [Environment]::SetEnvironmentVariable('COMPANY', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Azure storage account name") {
+    if ($response = Read-Host "Azure storage account name [$AzureStorageAccount]") {
         $env:AZSTORAGEACCOUNT = $response
         [Environment]::SetEnvironmentVariable('AZSTORAGEACCOUNT', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Azure storage queue name") {
+    if ($response = Read-Host "Azure storage queue name [$AzureQueueName]") {
         Write-Verbose "Setting AZQUEUENAME"
         $env:AZQUEUENAME = $response
         [Environment]::SetEnvironmentVariable('AZQUEUENAME', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Azure storage shared access signature token") {
+    if ($response = Read-Host "Azure storage shared access signature token [hidden]") {
         $env:AZSASTOKEN = $response
         [Environment]::SetEnvironmentVariable('AZSASTOKEN', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Active Directory server") {
+    if ($response = Read-Host "Active Directory server [$ActiveDirectoryServer]") {
         $env:ADSERVER = $response
         [Environment]::SetEnvironmentVariable('ADSERVER', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Active Directory users container (OU)") {
+    if ($response = Read-Host "Active Directory users container (OU) [$ActiveDirectoryUsersContainer]") {
         $env:ADUSERSCONTAINER = $response
         [Environment]::SetEnvironmentVariable('ADUSERSCONTAINER', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Azure AD Connect server") {
+    if ($response = Read-Host "Azure AD Connect server [$AzureADConnectServer]") {
         $env:AZADCONNECTSERVER = $response
         [Environment]::SetEnvironmentVariable('AZADCONNECTSERVER', $response, [System.EnvironmentVariableTarget]::Machine)
     }
-    if ($response = Read-Host "Root of user home folders in \\server\share\folder format") {
+    if ($response = Read-Host "UNC path to root of user home folder [$UsersFolderPath]") {
         $env:USERSFOLDERPATH = $response
         [Environment]::SetEnvironmentVariable('USERSFOLDERPATH', $response, [System.EnvironmentVariableTarget]::Machine)
     }
@@ -319,6 +322,8 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
 
         if ($user.Company -eq $Company) {
 
+            #Start-Transcript -OutputDirectory (Join-Path $ProgramDataPath 'Logs') | Out-Null
+            
             Write-Information "Message with id '$($peekedmessage.MessageId)' is intended for us; handling it"
 
             #
@@ -349,6 +354,8 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
                     Write-Warning "An error occurred while trying to start a sync cycle on $AzureADConnectServer"
                 }
             }
+
+            #Stop-Transcript | Out-Null
         }
         else {
             Write-Information "Peeked message with id '$($peekedmessage.MessageId)' was not intended for us; skipping"
