@@ -212,7 +212,7 @@ function New-User {
         $sid = '*'
         $sid += (Get-ADuser $user.Username -Server $ActiveDirectoryServer).SID.Value
         $path = Join-Path -Path $UsersFolderPath -ChildPath $user.Username
-        Write-Information "Creating user folder at $path and setting ownership/permissions"
+        Write-Information "Creating user folder at $path for owner $sid"
         New-Item -ItemType Directory -Path $path | Out-Null
         icacls.exe "$path" /setowner $sid /T /C | Out-Null
         icacls.exe "$path" /reset /T /C | Out-Null
@@ -221,6 +221,8 @@ function New-User {
     Write-Information "Saving generated credentials to $ProgramDataPath"
     $pass | Set-Content -Path (Join-Path $ProgramDataPath "$($user.Username).txt")
 }
+
+Add-Type -AssemblyName "System.Net.Http"
 
 if (-not ($Company) -and -not ($Setup -or $Preflight)) {
     Write-Warning "Company name must be provided using -Company or the 'COMPANY' environment variable"
@@ -322,8 +324,6 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
 
         if ($user.Company -eq $Company) {
 
-            #Start-Transcript -OutputDirectory (Join-Path $ProgramDataPath 'Logs') | Out-Null
-            
             Write-Information "Message with id '$($peekedmessage.MessageId)' is intended for us; handling it"
 
             #
@@ -354,8 +354,6 @@ if ($peekedmessages = @($xml.QueueMessagesList.QueueMessage)) {
                     Write-Warning "An error occurred while trying to start a sync cycle on $AzureADConnectServer"
                 }
             }
-
-            #Stop-Transcript | Out-Null
         }
         else {
             Write-Information "Peeked message with id '$($peekedmessage.MessageId)' was not intended for us; skipping"
