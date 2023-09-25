@@ -26,7 +26,7 @@ param (
     $VirtualSwitchName = 'External Virtual Switch',
     [Parameter()]
     [String]
-    $InstallationMedia = 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO',
+    $InstallationMedia = 'C:\Users\Public\Documents\ISO\SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO',
     [Parameter()]
     [Int64]
     $MemoryStartupBytes = 2GB,
@@ -44,7 +44,10 @@ param (
     $StartWhenFinished = $false,
     [Parameter()]
     [Switch]
-    $OverwriteExistingVhd = $false
+    $OverwriteExistingVhd = $false,
+    [Parameter()]
+    [String]
+    $ExistingVirtualHardDiskPath
 )
 
 if (!$Name) {
@@ -60,15 +63,19 @@ if (Get-VM -Name $Name -ErrorAction SilentlyContinue) {
     exit
 }
 
-$VhdPath = Join-Path (Get-VMHost).VirtualHardDiskPath "$Name.vhdx"
-
-if (-not (Test-Path $VhdPath) -or ($OverwriteExistingVhd)) {
-    Write-Output "Creating fixed size virtual hard disk..."
-    #New-VHD -Path $VhdPath -Fixed -SizeBytes $OperatingSystemVhdSizeBytes -LogicalSectorSizeBytes 512 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
-    if (Test-Path $VhdPath) {
-        Remove-Item $VhdPath -Force
+if (Test-Path $ExistingVirtualHardDiskPath) {
+    Write-Output "Using existing virtual hard disk at $ExistingVirtualHardDiskPath..."
+    $VhdPath = $ExistingVirtualHardDiskPath
+}
+else {
+    $VhdPath = Join-Path (Get-VMHost).VirtualHardDiskPath "$Name.vhdx"
+    if (-not (Test-Path $VhdPath) -or ($OverwriteExistingVhd)) {
+        Write-Output "Creating fixed size virtual hard disk..."
+        if (Test-Path $VhdPath) {
+            Remove-Item $VhdPath -Force
+        }
+        New-VHD -Path $VhdPath -Fixed -SizeBytes $OperatingSystemVhdSizeBytes -LogicalSectorSizeBytes 4096 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
     }
-    New-VHD -Path $VhdPath -Fixed -SizeBytes $OperatingSystemVhdSizeBytes -LogicalSectorSizeBytes 4096 -PhysicalSectorSizeBytes 4096 -BlockSizeBytes 2MB | Out-Null
 }
 
 Write-Output "Creating virtual machine..."
