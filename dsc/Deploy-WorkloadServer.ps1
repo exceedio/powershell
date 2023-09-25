@@ -161,6 +161,22 @@ Configuration WorkloadServer {
     }
 }
 
+if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)) {
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.208 -Force
+}
+
+if (-not (Get-InstalledModule -Name PSDscResourcesa -ErrorAction SilentlyContinue)) {
+    Install-Module -Name PSDscResources -Scope AllUsers -Force
+}
+
+if (-not (Get-InstalledModule -Name ComputerManagementDsc -ErrorAction SilentlyContinue)) {
+    Install-Module -Name ComputerManagementDsc -Scope AllUsers -Force
+}
+
+if (-not (Get-InstalledModule -Name NetworkingDsc -ErrorAction SilentlyContinue)) {
+    Install-Module -Name NetworkingDsc -Scope AllUsers -Force
+}
+
 $computerName = Select-ComputerName
 
 #
