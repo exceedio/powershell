@@ -177,7 +177,7 @@ Configuration WorkloadServer {
     }
 }
 
-$computerName = Select-ComputerName
+$computerName = Read-Host "Desired computer name"
 
 #
 # generate the configuration
