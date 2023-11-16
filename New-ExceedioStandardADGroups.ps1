@@ -18,9 +18,9 @@
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/New-ExceedioStandardADGroups.ps1 -UseBasicParsing | iex
 .NOTES
-    Filename : New-ExceedioVM.ps1
+    Filename : New-ExceedioStandardADGroups.ps1
     Author   : jreese@exceedio.com
-    Modified : Nov 10, 2023
+    Modified : Nov 16, 2023
 #>
 
 [CmdletBinding()]
