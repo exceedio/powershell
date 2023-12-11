@@ -86,24 +86,30 @@ if (Get-VMDvdDrive -VMName $VMName) {
     Get-VMDvdDrive -VMName $VMName | Set-VMDvdDrive -Path $null
 }
 
-Write-Output "[*] Copying $VMName configuration files"
-Copy-Item -Path $(Join-Path $vm.ConfigurationLocation "Virtual Machines\$VMGuid") -Destination "$DestinationVirtualMachinePathUnc\$VMGuid" -Recurse
-Copy-Item -Path $(Join-Path $vm.ConfigurationLocation "Virtual Machines\$VMGuid.xml") -Destination "$DestinationVirtualMachinePathUnc"
-
 Write-Output "[*] Copying $($vm.HardDrives.Count) virtual hard disk(s)"
 foreach ($vhd in $vm.HardDrives.Path) {
     Start-BitsTransfer -Source $vhd -Destination "$DestinationVirtualStoragePathUnc" -Description "Copying $vhd"
 }
 
+Write-Output "[*] Removing $($vm.HardDrives.Count) virtual hard disk(s) from virtual machine"
+$vm | Get-VMHardDiskDrive | Remove-VMHardDiskDrive
+
+Write-Output "[*] Removing all CD/DVDROM drives from virtual machine"
+$vm | Get-VMDvdDrive | Remove-VMDvdDrive
+
+Write-Output "[*] Copying $VMName configuration files"
+Copy-Item -Path $(Join-Path $vm.ConfigurationLocation "Virtual Machines\$VMGuid") -Destination "$DestinationVirtualMachinePathUnc\$VMGuid" -Recurse
+Copy-Item -Path $(Join-Path $vm.ConfigurationLocation "Virtual Machines\$VMGuid.*") -Destination "$DestinationVirtualMachinePathUnc"
+
 Write-Output "[*] Finished at $(Get-Date)"
 
 Write-Output ""
 Write-Output "*************************************************************************************"
-Write-Output "Run the following PowerShell commands on the target machine to complete the import..."
+Write-Output "Run the following PowerShell commands on the TARGET machine to complete the import..."
 Write-Output "*************************************************************************************"
 Write-Output ""
-Write-Output "(Compare-VM -Path '$DestinationVirtualMachinePath\$VMGuid.xml').Incompatibilities | fl *"
-Write-Output "Import-VM -Path '$DestinationVirtualMachinePath\$VMGuid.xml'"
+Write-Output "(Compare-VM -Path '$DestinationVirtualMachinePath\$VMGuid.vmcx').Incompatibilities | fl *"
+Write-Output "Import-VM -Path '$DestinationVirtualMachinePath\$VMGuid.vmcx'"
 Write-Output "Update-VMVersion -Name $VMName"
 Write-Output "Start-VM -Name $VMName"
 Write-Output ""
