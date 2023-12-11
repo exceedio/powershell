@@ -9,12 +9,15 @@
 
     This script should be run from the SOURCE Hyper-V host, not the destination. It assumes
     that the VM has a single virtual network adapter.
+
+    This script assumes that we are working with VMCX files, not human-readable XML files
+    for virtual machine definition files.
 .EXAMPLE
     iwr https://raw.githubusercontent.com/exceedio/powershell/master/Move-ExceedioVM.ps1 | iex
 .NOTES
     Filename : Move-ExceedioVM.ps1
     Author   : jreese@exceedio.com
-    Modified : Aug, 1, 2022
+    Modified : Dec, 11, 2023
 #>
 
 [CmdletBinding()]
@@ -88,7 +91,7 @@ if (Get-VMDvdDrive -VMName $VMName) {
 
 Write-Output "[*] Copying $($vm.HardDrives.Count) virtual hard disk(s)"
 foreach ($vhd in $vm.HardDrives.Path) {
-    Start-BitsTransfer -Source $vhd -Destination "$DestinationVirtualStoragePathUnc" -Description "Copying $vhd"
+    Start-BitsTransfer -Source $vhd -Destination "$DestinationVirtualStoragePathUnc" -Description "Copying $vhd" -ErrorAction Stop
 }
 
 Write-Output "[*] Removing $($vm.HardDrives.Count) virtual hard disk(s) from virtual machine"
