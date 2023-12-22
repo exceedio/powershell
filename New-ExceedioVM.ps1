@@ -327,7 +327,7 @@ $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
 Write-Output "Disabling time synchronization with hypervisor..."
 $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrationService
 Write-Output "Configuring boot order to enable DVD boot..."
-Set-VMFirmware -VMName $Name -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name)) EnableSecureBoot $SecureBoot
+Set-VMFirmware -VMName $Name -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name)) -EnableSecureBoot $SecureBoot
 Write-Output "Starting virtual machine..."
 $vm | Start-VM
 Write-Output "Waiting 10 seconds for MAC address to be populated..."
