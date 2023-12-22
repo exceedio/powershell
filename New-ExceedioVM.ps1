@@ -320,7 +320,7 @@ Write-Output "Connecting network adapter to $VirtualSwitchName..."
 $vm | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $VirtualSwitchName
 if ($VlanId) {
     Write-Output "Configuring VLAN id of $VlanId"
-    $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapterVlan -VMName $Name -Access -VlanId $VlanId
+    Set-VMNetworkAdapterVlan -VMName $Name -Access -VlanId $VlanId
 }
 Write-Output "Disabling VMQ to avoid Broadcom bugs..."
 $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
