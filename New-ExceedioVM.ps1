@@ -252,7 +252,7 @@ if ((Read-Host "Are you creating a domain controller? (y/n)") -eq 'y') {
     $AutomaticStartDelaySeconds = 0
 }
 
-if ((Read-Host "Are you creating a non-Windows VM? (y/n)" -eq 'y')) {
+if ((Read-Host "Are you creating a non-Windows VM? (y/n)") -eq 'y') {
     $SecureBoot = 'Off'
 }
 
