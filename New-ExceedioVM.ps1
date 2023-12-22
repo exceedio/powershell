@@ -44,14 +44,17 @@
 [CmdletBinding()]
 param (
     [Parameter()]
-    [String]
+    [string]
     $Name,
     [Parameter()]
-    [String]
+    [string]
     $Purpose,
     [Parameter()]
-    [String]
+    [string]
     $VirtualSwitchName,
+    [Parameter()]
+    [Int64]
+    $VlanId,
     [Parameter()]
     [Int64]
     $ProcessorCount,
@@ -71,8 +74,11 @@ param (
     [string]
     $DataVhdPath,
     [Parameter()]
-    [String]
+    [string]
     $InstallationMedia,
+    [Parameter()]
+    [Microsoft.HyperV.PowerShell.OnOffState]
+    $SecureBoot = 'On',
     [Parameter()]
     [Microsoft.HyperV.PowerShell.StopAction]
     $AutomaticStopAction = 'Save',
@@ -123,6 +129,14 @@ if (!$VirtualSwitchName) {
     }
 
     $VirtualSwitchName = $virtualSwitches[$selection - 1].Name
+}
+
+if (-not $VlanId) {
+    $selection = Read-Host "Enter the VLAN ID for this virtual machine or leave blank for none"
+
+    if (-not [string]::IsNullOrWhiteSpace($selection)) {
+        $VlanId = $selection
+    }
 }
 
 if (-not $ProcessorCount) {
@@ -238,6 +252,10 @@ if ((Read-Host "Are you creating a domain controller? (y/n)") -eq 'y') {
     $AutomaticStartDelaySeconds = 0
 }
 
+if ((Read-Host "Are you creating a non-Windows VM? (y/n)" -eq 'y')) {
+    $SecureBoot = 'Off'
+}
+
 Write-Output ""
 Write-Output "==================================================================="
 Write-Output "PREFLIGHT CHECK"
@@ -249,6 +267,7 @@ Write-Output "Purpose..................... $Purpose"
 Write-Output "Virtual cores............... $ProcessorCount"
 Write-Output "Memory...................... $($MemoryStartupBytes / 1GB)GB"
 Write-Output "Connect to virtual switch... $VirtualSwitchName"
+Write-Output "Configure VLAN tag ......... $VlanId"
 Write-Output "Automatic start action...... Start"
 Write-Output "Automatic start delay....... $AutomaticStartDelaySeconds seconds"
 Write-Output "Automatic stop action....... $AutomaticStopAction"
@@ -257,6 +276,7 @@ Write-Output "OS disk location............ $OperatingSystemVhdPath"
 Write-Output "Data disk size.............. $($DataVhdSizeBytes / 1GB)GB"
 Write-Output "Data disk location.......... $DataVhdPath"
 Write-Output "Installation media.......... $InstallationMedia"
+Write-Output "Secure boot ................ $SecureBoot"
 Write-Output ""
 Write-Output "Press 'y' to proceed, or any other key to quit..."
 
@@ -298,12 +318,16 @@ Write-Output "Adding a DVD drive to hold installation media..."
 $vm | Add-VMDvdDrive -ControllerNumber 0 -Path $InstallationMedia
 Write-Output "Connecting network adapter to $VirtualSwitchName..."
 $vm | Get-VMNetworkAdapter | Connect-VMNetworkAdapter -SwitchName $VirtualSwitchName
+if ($VlanId) {
+    Write-Output "Configuring VLAN id of $VlanId"
+    $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapterVlan -VMName $Name -Access -VlanId $VlanId
+}
 Write-Output "Disabling VMQ to avoid Broadcom bugs..."
 $vm | Get-VMNetworkAdapter | Set-VMNetworkAdapter -VMQWeight 0
 Write-Output "Disabling time synchronization with hypervisor..."
 $vm | Get-VMIntegrationService -Name "Time Synchronization" | Disable-VMIntegrationService
 Write-Output "Configuring boot order to enable DVD boot..."
-Set-VMFirmware -VMName $Name -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name))
+Set-VMFirmware -VMName $Name -BootOrder ((Get-VMHardDiskDrive -VMName $Name -ControllerNumber 0 -ControllerLocation 0), (Get-VMDvdDrive -VMName $Name)) EnableSecureBoot $SecureBoot
 Write-Output "Starting virtual machine..."
 $vm | Start-VM
 Write-Output "Waiting 10 seconds for MAC address to be populated..."
