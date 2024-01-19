@@ -449,7 +449,8 @@ function Show-Warning {
 }
 
 function Select-StorageDiskUniqueId {
-    Get-Disk | Where-Object IsBoot -eq $false | Sort-Object Number | Format-Table Number, FriendlyName, UniqueId, @{label = 'SizeInGb'; expression = { $_.Size / 1Gb } } | Out-Host
+    #Get-Disk | Where-Object IsBoot -eq $false | Sort-Object Number | Format-Table Number, FriendlyName, UniqueId, @{label = 'SizeInGb'; expression = { $_.Size / 1Gb } } | Out-Host
+    Get-Disk | Sort-Object Number | Format-Table Number, FriendlyName, UniqueId, @{label = 'SizeInGb'; expression = { $_.Size / 1Gb } } | Out-Host
     $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
     return (Get-Disk -Number $number).UniqueId
 }
