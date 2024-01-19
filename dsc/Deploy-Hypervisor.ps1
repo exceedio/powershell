@@ -63,239 +63,239 @@ Configuration Hypervisor {
         }
         
         WindowsOptionalFeature EnableSnmpFeature {
-            Name = 'SNMP'
+            Name   = 'SNMP'
             Ensure = 'Present'
         }
         
         Registry DisableRdpPrinterMapping {
-            Key = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
-            Ensure = 'Present'
+            Key       = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
+            Ensure    = 'Present'
             ValueName = 'fDisableCpm'
             ValueType = 'DWord'
             ValueData = '1'
-            Force = $true
+            Force     = $true
         }
 
         Registry HideFirstRunExperience {
-            Key = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
-            Ensure = 'Present'
+            Key       = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
+            Ensure    = 'Present'
             ValueName = 'HideFirstRunExperience'
             ValueType = 'DWord'
             ValueData = '1'
-            Force = $true
+            Force     = $true
         }
 
         Registry DisableEdgePasswordManager {
-            Key = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
-            Ensure = 'Present'
+            Key       = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
+            Ensure    = 'Present'
             ValueName = 'PasswordManagerEnabled'
             ValueType = 'DWord'
             ValueData = '0'
-            Force = $true
+            Force     = $true
         }
 
         Registry DisableOpenServerManagerAtLogon {
-            Key = 'HKLM:\SOFTWARE\Microsoft\ServerManager'
-            Ensure = 'Present'
+            Key       = 'HKLM:\SOFTWARE\Microsoft\ServerManager'
+            Ensure    = 'Present'
             ValueName = 'DoNotOpenServerManagerAtLogon'
             ValueType = 'DWord'
             ValueData = '1'
-            Force = $true
+            Force     = $true
         }
 
         RemoteDesktopAdmin EnableRdp {
-            IsSingleInstance = 'Yes'
-            Ensure = 'Present'
+            IsSingleInstance   = 'Yes'
+            Ensure             = 'Present'
             UserAuthentication = 'Secure'
         }
 
         Firewall EnableRemoteDesktop-In-TCP-WS {
-            Name = 'RemoteDesktop-In-TCP-WS'
-            Ensure = 'Present'
+            Name    = 'RemoteDesktop-In-TCP-WS'
+            Ensure  = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
         Firewall EnableRemoteDesktop-In-TCP-WSS {
-            Name = 'RemoteDesktop-In-TCP-WSS'
-            Ensure = 'Present'
+            Name    = 'RemoteDesktop-In-TCP-WSS'
+            Ensure  = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
         Firewall EnableRemoteDesktop-Shadow-In-TCP {
-            Name = 'RemoteDesktop-Shadow-In-TCP'
-            Ensure = 'Present'
+            Name    = 'RemoteDesktop-Shadow-In-TCP'
+            Ensure  = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
         Firewall EnableRemoteDesktop-UserMode-In-TCP {
-            Name = 'RemoteDesktop-UserMode-In-TCP'
-            Ensure = 'Present'
+            Name    = 'RemoteDesktop-UserMode-In-TCP'
+            Ensure  = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
         Firewall EnableRemoteDesktop-UserMode-In-UDP {
-            Name = 'RemoteDesktop-UserMode-In-UDP'
-            Ensure = 'Present'
+            Name    = 'RemoteDesktop-UserMode-In-UDP'
+            Ensure  = 'Present'
             Enabled = 'True'
             Profile = ('Domain', 'Private')
         }
 
         FirewallProfile EnablePrivateFirewallProfile {
-            Name = 'Private'
-            Enabled = 'True'
-            DefaultInboundAction = 'Block'
+            Name                  = 'Private'
+            Enabled               = 'True'
+            DefaultInboundAction  = 'Block'
             DefaultOutboundAction = 'Allow'
-            AllowInboundRules = 'True'
-            NotifyOnListen = 'False'
-            LogFileName = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
-            LogMaxSizeKilobytes = 16384
-            LogAllowed = 'False'
-            LogBlocked = 'True'
-            LogIgnored = 'NotConfigured'
+            AllowInboundRules     = 'True'
+            NotifyOnListen        = 'False'
+            LogFileName           = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
+            LogMaxSizeKilobytes   = 16384
+            LogAllowed            = 'False'
+            LogBlocked            = 'True'
+            LogIgnored            = 'NotConfigured'
         }
 
         FirewallProfile EnableDomainFirewallProfile {
-            Name = 'Domain'
-            Enabled = 'True'
-            DefaultInboundAction = 'Block'
+            Name                  = 'Domain'
+            Enabled               = 'True'
+            DefaultInboundAction  = 'Block'
             DefaultOutboundAction = 'Allow'
-            AllowInboundRules = 'True'
-            NotifyOnListen = 'False'
-            LogFileName = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
-            LogMaxSizeKilobytes = 16384
-            LogAllowed = 'False'
-            LogBlocked = 'True'
-            LogIgnored = 'NotConfigured'
+            AllowInboundRules     = 'True'
+            NotifyOnListen        = 'False'
+            LogFileName           = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
+            LogMaxSizeKilobytes   = 16384
+            LogAllowed            = 'False'
+            LogBlocked            = 'True'
+            LogIgnored            = 'NotConfigured'
         }
 
         FirewallProfile EnablePublicFirewallProfile {
-            Name = 'Public'
-            Enabled = 'True'
-            DefaultInboundAction = 'Block'
+            Name                  = 'Public'
+            Enabled               = 'True'
+            DefaultInboundAction  = 'Block'
             DefaultOutboundAction = 'Allow'
-            AllowInboundRules = 'True'
-            NotifyOnListen = 'False'
-            LogFileName = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
-            LogMaxSizeKilobytes = 16384
-            LogAllowed = 'False'
-            LogBlocked = 'True'
-            LogIgnored = 'NotConfigured'
+            AllowInboundRules     = 'True'
+            NotifyOnListen        = 'False'
+            LogFileName           = '%systemroot%\system32\LogFiles\Firewall\pfirewall.log'
+            LogMaxSizeKilobytes   = 16384
+            LogAllowed            = 'False'
+            LogBlocked            = 'True'
+            LogIgnored            = 'NotConfigured'
         }
 
         Service DisableDefragService {
-            Name = 'defragsvc'
-            Ensure = 'Present'
+            Name        = 'defragsvc'
+            Ensure      = 'Present'
             StartupType = 'Manual'
-            State = 'Stopped'
+            State       = 'Stopped'
         }
 
         Service EnableW32TimeService {
-            Name = 'W32Time'
-            Ensure = 'Present'
+            Name        = 'W32Time'
+            Ensure      = 'Present'
             StartupType = 'Automatic'
-            State = 'Running'
+            State       = 'Running'
         }
 
         Script EnableTimeSyncWithGoogle {
-            SetScript = {
+            SetScript  = {
                 w32tm.exe /config /manualpeerlist:"time.google.com" /syncfromflags:manual /update | Out-Null
                 w32tm.exe /resync
             }
             TestScript = {
                 return ((w32tm.exe /query /configuration | Select-String 'NtpServer: time.google.com') -ne $null)
             }
-            GetScript = {
+            GetScript  = {
                 return @{
                     Result = (Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DateTime\Servers').GetValue(1)
                 }                
             }
-            DependsOn = '[Service]EnableW32TimeService'
+            DependsOn  = '[Service]EnableW32TimeService'
         }
 
         WaitForDisk WaitForStorageDisk {
-            DiskId = $StorageDiskUniqueId
-            DiskIdType = 'UniqueId'
+            DiskId           = $StorageDiskUniqueId
+            DiskIdType       = 'UniqueId'
             RetryIntervalSec = 60
-            RetryCount = 60
+            RetryCount       = 60
         }
 
         Disk FormatStorageVolume {
-            DiskId = $StorageDiskUniqueId
-            DiskIdType = 'UniqueId'
-            DriveLetter = 'D'
-            FSLabel = 'Data'
-            FSFormat = 'ReFS'
+            DiskId             = $StorageDiskUniqueId
+            DiskIdType         = 'UniqueId'
+            DriveLetter        = 'D'
+            FSLabel            = 'Data'
+            FSFormat           = 'ReFS'
             AllocationUnitSize = 64KB
-            PartitionStyle = 'GPT'
-            AllowDestructive = $true
-            ClearDisk = $true
-            DependsOn = '[WaitForDisk]WaitForStorageDisk'
+            PartitionStyle     = 'GPT'
+            #AllowDestructive = $true
+            #ClearDisk = $true
+            DependsOn          = '[WaitForDisk]WaitForStorageDisk'
         }
 
         File CreateVirtualHardDiskPath {
             DestinationPath = $VirtualHardDiskPath
-            Ensure = 'Present'
-            Type = 'Directory'
-            DependsOn = '[Disk]FormatStorageVolume'
+            Ensure          = 'Present'
+            Type            = 'Directory'
+            DependsOn       = '[Disk]FormatStorageVolume'
         }
 
         File CreateVirtualMachinePath {
             DestinationPath = $VirtualMachinePath
-            Ensure = 'Present'
-            Type = 'Directory'
-            DependsOn = '[Disk]FormatStorageVolume'
+            Ensure          = 'Present'
+            Type            = 'Directory'
+            DependsOn       = '[Disk]FormatStorageVolume'
         }
 
         File CreateVirtualMachineISOPath {
             DestinationPath = $VirtualMachineISOPath
-            Ensure = 'Present'
-            Type = 'Directory'
+            Ensure          = 'Present'
+            Type            = 'Directory'
         }
 
         File DeleteDefaultVirtualMachinePath {
             DestinationPath = 'C:\Users\Public\Documents\Hyper-V'
-            Ensure = 'Absent'
-            Type = 'Directory'
-            Force = $true
-            DependsOn = '[xVMHost]HyperVStoragePaths'
+            Ensure          = 'Absent'
+            Type            = 'Directory'
+            Force           = $true
+            DependsOn       = '[xVMHost]HyperVStoragePaths'
         }
 
         WindowsFeature EnableHyperVFeature {
-            Name = 'Hyper-V'
-            Ensure = 'Present'
+            Name      = 'Hyper-V'
+            Ensure    = 'Present'
             DependsOn = '[File]CreateVirtualMachinePath'
         }
 
         WindowsFeature EnableHyperVToolsFeatures {
-            Name = 'RSAT-Hyper-V-Tools'
-            Ensure = 'Present'
+            Name                 = 'RSAT-Hyper-V-Tools'
+            Ensure               = 'Present'
             IncludeAllSubFeature = $true
-            DependsOn = '[File]CreateVirtualMachinePath'
+            DependsOn            = '[File]CreateVirtualMachinePath'
         }
 
         xVMHost HyperVStoragePaths {
-            IsSingleInstance = 'Yes'
+            IsSingleInstance    = 'Yes'
             VirtualHardDiskPath = $VirtualHardDiskPath
-            VirtualMachinePath = $VirtualMachinePath
-            DependsOn = '[WindowsFeature]EnableHyperVToolsFeatures'
+            VirtualMachinePath  = $VirtualMachinePath
+            DependsOn           = '[WindowsFeature]EnableHyperVToolsFeatures'
         }
 
         xVMSwitch ExternalSwitch {
-            Name = 'External Virtual Switch'
-            Ensure = 'Present'
-            Type = 'External'
-            NetAdapterName = $ExternalVirtualSwitchNics
+            Name                  = 'External Virtual Switch'
+            Ensure                = 'Present'
+            Type                  = 'External'
+            NetAdapterName        = $ExternalVirtualSwitchNics
             EnableEmbeddedTeaming = $true
-            AllowManagementOS = $false
-            DependsOn = '[WindowsFeature]EnableHyperVToolsFeatures'
+            AllowManagementOS     = $false
+            DependsOn             = '[WindowsFeature]EnableHyperVToolsFeatures'
         }
 
         Script DownloadVMInstallMedia {
-            SetScript = {
+            SetScript  = {
                 $folder = $using:VirtualMachineISOPath
                 $filenames = @(
                     'SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO',
@@ -312,7 +312,7 @@ Configuration Hypervisor {
             TestScript = {
                 return (@(Get-ChildItem $using:VirtualMachineISOPath).Count -eq 2)
             }
-            GetScript = {
+            GetScript  = {
                 return @{
                     Result = Get-ChildItem $using:VirtualMachineISOPath
                 }                
@@ -320,7 +320,7 @@ Configuration Hypervisor {
         }
 
         Script BenchmarkStorageSpeed {
-            SetScript = {
+            SetScript  = {
                 Start-BitsTransfer `
                     -Source 'https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP' `
                     -Destination 'C:\Users\Public\Documents\DiskSpd.ZIP'
@@ -331,7 +331,7 @@ Configuration Hypervisor {
                 $cores = (Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfLogicalProcessors)
                 Start-Process `
                     -FilePath 'C:\Users\Public\Documents\DiskSpd\amd64\diskspd.exe' `
-                    -ArgumentList @("-t$cores",'-o32','-b4k','-r','-w30','-d60','-Sh','-D','-L','-c5G','D:\diskspd.dat') `
+                    -ArgumentList @("-t$cores", '-o32', '-b4k', '-r', '-w30', '-d60', '-Sh', '-D', '-L', '-c5G', 'D:\diskspd.dat') `
                     -RedirectStandardOutput 'C:\Users\Public\Documents\DiskSpd.txt' `
                     -Wait `
                     -NoNewWindow
@@ -342,41 +342,41 @@ Configuration Hypervisor {
             TestScript = {
                 return Test-Path 'C:\Users\Public\Documents\DiskSpd.txt'
             }
-            GetScript = {
+            GetScript  = {
                 return @{
                     Result = Get-Content 'C:\Users\Public\Documents\storagespeed.txt'
                 }
             }
-            DependsOn = '[Disk]FormatStorageVolume'
+            DependsOn  = '[Disk]FormatStorageVolume'
         }
 
         if ($DellOmsaManagedNodeUri) {
 
             Script InstallDellOmsa {
-                SetScript = {
+                SetScript  = {
                     $uri = $using:DellOmsaManagedNodeUri
                     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
                     $pathAndFilename = Join-Path $env:temp $filename
                     Start-BitsTransfer -Source $uri -Destination $pathAndFilename
                     Start-Process -FilePath "$pathAndFilename" -ArgumentList @("/auto") -Wait -NoNewWindow
-                    Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i","C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi","/qb","/norestart") -Wait -NoNewWindow
+                    Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i", "C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi", "/qb", "/norestart") -Wait -NoNewWindow
                 }
                 TestScript = {
                     return (Test-Path -Path 'C:\Program Files\Dell\SysMgt\omsa')
                 }
-                GetScript = {
+                GetScript  = {
                     return @{
                         Result = (Test-Path -Path 'C:\Program Files\Dell\SysMgt\omsa')
                     }                
                 }
-                DependsOn = '[xVMSwitch]ExternalSwitch'
+                DependsOn  = '[xVMSwitch]ExternalSwitch'
             }
 
             Script SecureOmsaWebServer {
-                SetScript = {
-                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences","webserver","attribute=ciphers", "setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
-                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences","webserver","attribute=sslprotocol", "setting=TLSv1.2,TLSv1.3") -Wait -NoNewWindow
-                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("system","webserver","action=restart") -Wait -NoNewWindow
+                SetScript  = {
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=ciphers", "setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=sslprotocol", "setting=TLSv1.2,TLSv1.3") -Wait -NoNewWindow
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("system", "webserver", "action=restart") -Wait -NoNewWindow
                 }
                 TestScript = {
                     if (-not (Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')) { return $false }
@@ -384,33 +384,33 @@ Configuration Hypervisor {
                     if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2,TLSv1.3') { return $false }
                     return $true
                 }
-                GetScript = {
+                GetScript  = {
                     $result = & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers
                     $result += & 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol
                     return @{
                         Result = $result
                     }                
                 }
-                DependsOn = '[Script]InstallDellOmsa'
+                DependsOn  = '[Script]InstallDellOmsa'
             }
 
             Script SetDellRemoteAccessControllerName {
-                SetScript = {
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV','OB')
+                SetScript  = {
+                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV', 'OB')
                 }
                 TestScript = {
-                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -match ($using:ComputerName).Replace('SV','OB')
+                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -match ($using:ComputerName).Replace('SV', 'OB')
                 }
-                GetScript = {
+                GetScript  = {
                     return @{
                         Result = (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)
                     }                
                 }
-                DependsOn = '[Script]InstallDellOmsa'
+                DependsOn  = '[Script]InstallDellOmsa'
             }
 
             Script SetDellRemoteAccessControllerNic {
-                SetScript = {
+                SetScript  = {
                     $address = ($using:DellRemoteAccessControllerAddr)
                     $gateway = $address.Substring(0, $address.LastIndexOf(".")) + ".1"
                     & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DHCPEnable 0
@@ -426,14 +426,14 @@ Configuration Hypervisor {
                 TestScript = {
                     return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4.DHCPEnable)[1] -eq 'DHCPEnable=Disabled'
                 }
-                GetScript = {
+                GetScript  = {
                     $result = & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4
                     $result += & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic
                     return @{
                         Result = $result
                     }                
                 }
-                DependsOn = '[Script]InstallDellOmsa'
+                DependsOn  = '[Script]InstallDellOmsa'
             }
         }
     }
@@ -449,13 +449,13 @@ function Show-Warning {
 }
 
 function Select-StorageDiskUniqueId {
-    Get-Disk | Where-Object IsBoot -eq $false | Sort-Object Number | Format-Table Number,FriendlyName,UniqueId,@{label='SizeInGb';expression={$_.Size / 1Gb}} | Out-Host
+    Get-Disk | Where-Object IsBoot -eq $false | Sort-Object Number | Format-Table Number, FriendlyName, UniqueId, @{label = 'SizeInGb'; expression = { $_.Size / 1Gb } } | Out-Host
     $number = Read-Host "Type the number of the disk that will be used to store virtual machines"
     return (Get-Disk -Number $number).UniqueId
 }
 
 function Select-ExternalVirtualSwitchNics {
-    Get-NetAdapter | Sort-Object Name | Format-Table Name,MacAddress,Status | Out-Host
+    Get-NetAdapter | Sort-Object Name | Format-Table Name, MacAddress, Status | Out-Host
     $list = Read-Host "Comma-separated list of NIC name(s) that make up default virtual switch"
     return $list.Split(',')
 }
