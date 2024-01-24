@@ -10,7 +10,7 @@
 .NOTES
     Filename : Deploy-Hypervisor.ps1
     Author   : jreese@exceedio.com
-    Modified : Jan 19, 2024
+    Modified : Jan 24, 2024
 #>
 
 Configuration Hypervisor {
@@ -186,12 +186,12 @@ Configuration Hypervisor {
             LogIgnored            = 'NotConfigured'
         }
 
-        Service DisableDefragService {
-            Name        = 'defragsvc'
-            Ensure      = 'Present'
-            StartupType = 'Manual'
-            State       = 'Stopped'
-        }
+        #Service DisableDefragService {
+        #    Name        = 'defragsvc'
+        #    Ensure      = 'Present'
+        #    StartupType = 'Manual'
+        #    State       = 'Stopped'
+        #}
 
         Service EnableW32TimeService {
             Name        = 'W32Time'
@@ -472,7 +472,7 @@ function Select-DellRemoteAccessControllerAddr {
 
 function Select-DellOmsaManagedNodeUri {
     Write-Host "Dell EMC OpenManage Server Administrator Managed Node for Windows can be located on Dell support site"
-    Write-Host "Latest is https://dl.dell.com/FOLDER07619260M/1/OM-SrvAdmin-Dell-Web-WINX64-10.2.0.0-4631_A00.exe"
+    Write-Host "Latest is https://dl.dell.com/FOLDER10664637M/1/OM-SrvAdmin-Dell-Web-WINX64-11.0.0.0-5488_A00.exe"
     Write-Host "Leave blank if not working with a Dell server"
     Read-Host  "Type or paste URL"
 }
