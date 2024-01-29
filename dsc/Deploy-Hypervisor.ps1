@@ -436,6 +436,14 @@ Configuration Hypervisor {
                 DependsOn  = '[Script]InstallDellOmsa'
             }
         }
+
+        xWindowsUpdateUpdate MuSecurityImportantOptional {
+            IsSingleInstance = 'Yes'
+            Category         = @('Security', 'Important', 'Optional')
+            Source           = 'MicrosoftUpdate'
+            UpdateNow        = $true
+            DependsOn        = '[Script]BenchmarkStorageSpeed'
+        }
     }
 }
 
