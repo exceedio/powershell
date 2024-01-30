@@ -26,4 +26,4 @@ Install-Module -Name ComputerManagementDsc -Scope AllUsers -Force
 Install-Module -Name NetworkingDsc -Scope AllUsers -Force
 Install-Module -Name StorageDsc -Scope AllUsers -Force
 Install-Module -Name xHyper-V -Scope AllUsers -Force
-Install-Module -Name xWindowsUpdate -Scope AllUsers -Force -AllowPrerelease
+Install-Module -Name xWindowsUpdate -Scope AllUsers -Force
