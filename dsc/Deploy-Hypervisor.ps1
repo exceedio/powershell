@@ -437,7 +437,7 @@ Configuration Hypervisor {
             }
         }
 
-        xWindowsUpdateUpdate MuSecurityImportantOptional {
+        xWindowsUpdateAgent MuSecurityImportantOptional {
             IsSingleInstance = 'Yes'
             Category         = @('Security', 'Important', 'Optional')
             Source           = 'MicrosoftUpdate'
