@@ -55,6 +55,7 @@ Configuration Hypervisor {
     Import-DscResource -ModuleName NetworkingDsc
     Import-DscResource -ModuleName StorageDsc
     Import-DscResource -ModuleName xHyper-V
+    Import-DscResource -ModuleName xWindowsUpdate
 
     Node 'localhost' {
 
