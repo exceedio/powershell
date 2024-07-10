@@ -10,7 +10,7 @@
     .EXAMPLE
         PS C:\> Update-NSClientIni.ps1
     .EXAMPLE
-        PS C:\> irm https://raw.githubusercontent.com/exceedio/powershell/main/Update-NSClientIni.ps1 | iex
+        PS C:\> irm https://raw.githubusercontent.com/exceedio/powershell/master/Update-NSClientIni.ps1 | iex
     .PARAMETER NSClientIni
         The path to write to and/or the path of the existing nsclient.ini file.
         Defaults to C:\Program Files\NSClient\nsclient.ini if omitted.
