@@ -19,7 +19,7 @@
         Does not necessarily need to correspond to the actual hostname of the
         system. If omitted it will default to the hostname in the existing
         nsclient.ini at the location specified by the NSClientIni parameter.
-   .PARAMETER EncryptionKey
+    .PARAMETER EncryptionKey
         The password to use when AES encrypting data to be sent to the server
         specified by the Address parameter. If omitted it will default to the
         password in the existing nsclient.ini at the location specified by the
@@ -190,13 +190,14 @@ $updatedIni += "exe = cmd /c %SCRIPT% %ARGS%"
 $updatedIni += ""
 $updatedIni += "[/settings/external scripts/scripts]"
 $updatedIni += ""
-$updatedIni += "check_omsa=scripts/check_openmanage.exe"
+$updatedIni += "check_omsa=scripts/check_openmanage.exe --timeout 60"
 $updatedIni += ""
 $updatedIni += "[/settings/external scripts/wrapped scripts]"
 $updatedIni += ""
 $updatedIni += "check_printers=check_printers.vbs"
 $updatedIni += "check_time=check_windows_time.bat time.google.com 120 300"
 $updatedIni += "check_wsb=check_wsb.ps1"
+$updatedIni += 'check_icmp=check_icmp.ps1 -Targets $ARG1$'
 $updatedIni += ""
 $updatedIni += "[/settings/NSCA/client/targets/default]"
 $updatedIni += ""
