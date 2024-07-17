@@ -50,6 +50,20 @@ Start-Process `
     -ArgumentList "/i $Installer /qn /norestart ADDLOCAL=ALL REMOVE=FirewallConfig,OP5Montoring,PythonScript,SampleConfig,Shortcuts" `
     -Wait
 
+Write-Host "Copying custom scripts to scripts folder"
+$customscripts = @(
+    'check_adreplicationhealth.ps1',
+    'check_printers.vbs',
+    'check_time.vbs',
+    'check_windows_time.bat',
+    'check_openmanage.exe'
+)
+$customscripts | ForEach-Object {
+    Start-BitsTransfer `
+        -Source "https://exdosa.blob.core.windows.net/public/nscp/scripts/$_" `
+        -Destination "C:\Program Files\NSClient++\scripts"
+}
+
 Write-Host "Stopping nscp service"
 Stop-Service nscp
 
