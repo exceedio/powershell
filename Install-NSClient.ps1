@@ -87,4 +87,7 @@ $ini -join "`n" | Out-File `
 Write-Host "Updating nsclient.ini with final values"
 Invoke-RestMethod -Uri $NSClientIniUpdater | Invoke-Expression
 
+Write-Host "Starting nscp service if not already running"
+Start-Service nscp
+
 Write-Host "Finished"
