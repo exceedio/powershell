@@ -8,6 +8,12 @@
         hostname, monitoring server address, and encryption key during the
         installation. As the final step this script calls Update-NSClientIni.ps1
         to generate the final nsclient.ini file.
+    .NOTES
+        On older servers with PowerShell 5.1 you may need to make execute the
+        following statement before running this script. You will know that you
+        must if you receive an error: 'Could not create SSL/TLS secure channel'
+
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     .EXAMPLE
         PS C:\> Install-NSClient.ps1
     .EXAMPLE
