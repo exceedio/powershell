@@ -375,13 +375,13 @@ Configuration Hypervisor {
 
             Script SecureOmsaWebServer {
                 SetScript  = {
-                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=ciphers", "setting=TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256") -Wait -NoNewWindow
+                    Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=ciphers", "setting=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384") -Wait -NoNewWindow
                     Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=sslprotocol", "setting=TLSv1.2,TLSv1.3") -Wait -NoNewWindow
                     Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("system", "webserver", "action=restart") -Wait -NoNewWindow
                 }
                 TestScript = {
                     if (-not (Test-Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')) { return $false }
-                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers)[1] -ne 'CIPHERS-Value : TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256') { return $false }
+                    if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getciphers)[1] -ne 'CIPHERS-Value : TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384') { return $false }
                     if ((& 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe' preferences webserver attribute=getsslprotocol)[1] -ne 'SSLProtocolValue : TLSv1.2,TLSv1.3') { return $false }
                     return $true
                 }
