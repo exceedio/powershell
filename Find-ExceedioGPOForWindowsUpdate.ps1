@@ -7,7 +7,7 @@ $Results = @()
 # Get all GPOs in the domain
 $AllGPOs = Get-GPO -All
 
-foreach ($GPO in $AllGPOs)
+foreach ($GPO in $AllGPOs | Sort-Object DisplayName)
 {
     Write-Host "Processing GPO: $($GPO.DisplayName)"
     
@@ -20,16 +20,15 @@ foreach ($GPO in $AllGPOs)
     $FoundWindowsUpdate = $false
     
     # Search for Windows Update settings in Computer Configuration
-    $ComputerExtensions = $Xml.GPO.Computer.ExtensionData.Extension
-    if ($ComputerExtensions)
+    if ($Xml.GPO.Computer.ExtensionData.Extension)
     {
-        foreach ($Extension in $ComputerExtensions)
+        foreach ($Extension in $Xml.GPO.Computer.ExtensionData.Extension)
         {
-            if ($Extension.Name -eq 'Administrative Templates')
+            if ($Extension.Policy)
             {
                 foreach ($Policy in $Extension.Policy)
                 {
-                    if ($Policy.Parent -like '*Windows Update*')
+                    if ($Policy.Category -like '*Windows Update*')
                     {
                         $FoundWindowsUpdate = $true
                         break
@@ -43,43 +42,36 @@ foreach ($GPO in $AllGPOs)
     }
 
     # If not found, search User Configuration
-    if (-not $FoundWindowsUpdate)
+    if (-not $FoundWindowsUpdate -and $Xml.GPO.User.ExtensionData.Extension)
     {
-        $UserExtensions = $Xml.GPO.User.ExtensionData.Extension
-        if ($UserExtensions)
+        foreach ($Extension in $Xml.GPO.User.ExtensionData.Extension)
         {
-            foreach ($Extension in $UserExtensions)
+            if ($Extension.Policy)
             {
-                if ($Extension.Name -eq 'Administrative Templates')
+                foreach ($Policy in $Extension.Policy)
                 {
-                    foreach ($Policy in $Extension.Policy)
+                    if ($Policy.Category -like '*Windows Update*')
                     {
-                        if ($Policy.Parent -like '*Windows Update*')
-                        {
-                            $FoundWindowsUpdate = $true
-                            break
-                        }
+                        $FoundWindowsUpdate = $true
+                        break
                     }
                 }
-                if ($FoundWindowsUpdate)
-                { break 
-                }
+            }
+            if ($FoundWindowsUpdate)
+            { break 
             }
         }
     }
 
     if ($FoundWindowsUpdate)
     {
-        # Get the links where the GPO is applied
-        $Links = Get-GPOLink -Guid $GPO.Id
-
-        # Build a list of linked locations
-        $LinkLocations = if ($Links)
+        $LinkLocations = @()
+        foreach ($link in (Get-ADOrganizationalUnit -Filter * | Get-GPInheritance).GpoLinks)
         {
-            $Links | Select-Object -ExpandProperty Target
-        } else
-        {
-            'Not linked'
+            if ($link.DisplayName -eq $GPO.DisplayName)
+            {
+                $LinkLocations += $link.Target
+            }
         }
 
         # Add the result to the array
