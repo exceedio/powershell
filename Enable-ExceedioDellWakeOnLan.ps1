@@ -61,8 +61,33 @@ Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\WakeOnLan" -DesiredValue 
 
 if ($nic = Get-NetAdapter | Where-Object {$_.Status -eq 'Up' -and $_.PhysicalMediaType -eq '802.3'})
 {
-    Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
-    Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
-    Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Green Ethernet'
-    Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
+    # The following settings are most common on the Realtek NICs that are
+    # standard on the Dell OptiPlex line. To get the advanced properties for
+    # your NIC use the following:
+    #
+    # Get-NetAdapter -Name Ethernet | Get-NetAdapterAdvancedProperty | Sort-Object DisplayName | Select-Object DisplayName,DisplayValue
+    #
+    if ($nic.DriverProvider -eq 'Realtek')
+    {
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Advanced EEE'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Gigabit Lite'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Green Ethernet'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Shutdown Wake-On-Lan' -DesiredValue 'Enabled'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
+    }
+
+    if ($nic.DriverProvider -eq 'Intel')
+    {
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Reduce Speed On Power Down'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'System Idle Power Saver'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Ultra Low Power Mode'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Link Settings' -DesiredValue 'Enabled'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
+        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
+    }
 }
