@@ -41,7 +41,7 @@ if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
 
 if (-not (Get-Module -ListAvailable -Name DellBIOSProvider))
 {
-    Install-Module -Name DellBIOSProvider -MinimumVersion -Scope AllUsers 2.8.0 -Force -Confirm:$false -ErrorAction Stop
+    Install-Module -Name DellBIOSProvider -MinimumVersion 2.8.0 -Scope AllUsers -Force -Confirm:$false -ErrorAction Stop
 }
 
 function Set-DellSmbiosValue
@@ -125,11 +125,11 @@ if ($nic = Get-NetAdapter | Where-Object {$_.Status -eq 'Up' -and $_.PhysicalMed
         'Intel'
         {
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
-            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet' -DesiredValue 'Off'
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Reduce Speed On Power Down'
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'System Idle Power Saver'
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Ultra Low Power Mode'
-            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Link Settings' -DesiredValue 'Enabled'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Link Settings' -DesiredValue 'Forced'
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
             Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
         }
