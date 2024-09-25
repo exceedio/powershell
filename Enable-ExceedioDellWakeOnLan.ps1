@@ -1,13 +1,38 @@
+#Requires -Version 5.1
+#Requires -RunAsAdministrator
+
+<#
+.SYNOPSIS
+    Configures Dell clients with Realtek or Intel cards for wake on lan (WOL)
+.DESCRIPTION
+    Designed to configure Dell Windows client computers with Realteak or Intel
+    ethernet cards to ensure they are on or can be turned on for overnight
+    maintenance tasks such as patching.
+
+    Configures BIOS and advanced network card properties for Dell client
+    computers having Realtek or Intel network cards to support wake on lan
+    (WOL) functionality. Also configures Dell BIOS-based automatic power on
+    for 12:05 AM (5 minutes after midnight) every day.
+.EXAMPLE
+    irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Enable-ExceedioDellWakeOnLan.ps1 | iex
+.NOTES
+    Filename: Enable-ExceedioDellWakeOnLan.ps1
+    Author:   jreese@exceedio.com
+    Modified: Sep 25, 2024
+#>
+
 [CmdletBinding()]
 param()
 
 try
 {
     Import-Module -Name DellBIOSProvider
+    Write-Host "Existing Dell BIOS provider module loaded"
 } catch
 {
     Find-Module -Name DellBIOSProvider | Install-Module -Scope AllUsers -AllowClobber -Force
     Import-Module -Name DellBIOSProvider
+    Write-Host "Installed and loaded the Dell BIOS provider module"
 }
 
 function Set-DellSmbiosValue
@@ -61,33 +86,46 @@ Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\WakeOnLan" -DesiredValue 
 
 if ($nic = Get-NetAdapter | Where-Object {$_.Status -eq 'Up' -and $_.PhysicalMediaType -eq '802.3'})
 {
-    # The following settings are most common on the Realtek NICs that are
-    # standard on the Dell OptiPlex line. To get the advanced properties for
-    # your NIC use the following:
+    Write-Host "Found $($nic.DriverProvider) netadapter with MAC $($nic.MacAddress)"
+
+    #
+    # Realtek and Intel cards that are common on Dell client computers have
+    # different settings that need to be configured to support WOL so we base
+    # our settings on which of those two we found.
+    #
+    # To get the advanced properties for your adapter run the following:
     #
     # Get-NetAdapter -Name Ethernet | Get-NetAdapterAdvancedProperty | Sort-Object DisplayName | Select-Object DisplayName,DisplayValue
     #
-    if ($nic.DriverProvider -eq 'Realtek')
+    switch ($nic.DriverProvider)
     {
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Advanced EEE'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Gigabit Lite'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Green Ethernet'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Shutdown Wake-On-Lan' -DesiredValue 'Enabled'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
-    }
-
-    if ($nic.DriverProvider -eq 'Intel')
-    {
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Reduce Speed On Power Down'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'System Idle Power Saver'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Ultra Low Power Mode'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Link Settings' -DesiredValue 'Enabled'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
-        Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
+        'Realtek'
+        {
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Advanced EEE'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Gigabit Lite'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Green Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Shutdown Wake-On-Lan' -DesiredValue 'Enabled'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
+        }
+        'Intel'
+        {
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy-Efficient Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Energy Efficient Ethernet'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Reduce Speed On Power Down'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'System Idle Power Saver'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Ultra Low Power Mode'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Link Settings' -DesiredValue 'Enabled'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on Magic Packet' -DesiredValue 'Enabled'
+            Set-NetAdapterAdvancedPropertyIfExists -NetAdapter $nic -Property 'Wake on pattern match' -DesiredValue 'Enabled'
+        }
+        default
+        {
+            Write-Host "Unknown network adapter type '$($nic.DriverProvider)'. No settings changed!" -ForegroundColor Yellow
+        }
     }
 }
+
+Write-Host "Finished"
