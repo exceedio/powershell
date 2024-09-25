@@ -24,15 +24,24 @@
 [CmdletBinding()]
 param()
 
-try
+# Older versions of PowerShell default to TLS 1.0, which is incompatible with
+# modern repositories like the PowerShell Gallery. Setting the security protocol
+# to TLS 1.2 ensures secure connections
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue))
 {
-    Import-Module -Name DellBIOSProvider
-    Write-Host "Existing Dell BIOS provider module loaded"
-} catch
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false
+}
+
+if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
 {
-    Find-Module -Name DellBIOSProvider | Install-Module -Scope AllUsers -AllowClobber -Force
-    Import-Module -Name DellBIOSProvider
-    Write-Host "Installed and loaded the Dell BIOS provider module"
+    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+}
+
+if (-not (Get-Module -ListAvailable -Name DellBIOSProvider))
+{
+    Install-Module -Name DellBIOSProvider -MinimumVersion -Scope AllUsers 2.8.0 -Force -Confirm:$false -ErrorAction Stop
 }
 
 function Set-DellSmbiosValue
