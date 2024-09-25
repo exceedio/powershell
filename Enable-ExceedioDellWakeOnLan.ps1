@@ -31,16 +31,23 @@ param()
 
 if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue))
 {
+    Write-Host "Installing NuGet package provider"
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false
 }
 
 if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
 {
-    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+    Write-Host "Checking status of PSGallery repository"
+    if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
+    {
+        Write-Host "Trusting the PSGallery repository"
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+    }
 }
 
 if (-not (Get-Module -ListAvailable -Name DellBIOSProvider))
 {
+    Write-Host "Installing the DellBIOSProvider module"
     Install-Module -Name DellBIOSProvider -MinimumVersion 2.8.0 -Scope AllUsers -Force -Confirm:$false -ErrorAction Stop
 }
 
