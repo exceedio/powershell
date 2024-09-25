@@ -84,10 +84,13 @@ function Set-NetAdapterAdvancedPropertyIfExists
     }
 }
 
+Write-Host "Configuring BIOS to automatically power on system"
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AcPwrRcvry" -DesiredValue 'On'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOn" -DesiredValue 'Everyday'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOnHr" -DesiredValue '0'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOnMn" -DesiredValue '5'
+
+Write-Host "Configuring BIOS to support Wake On Lan (WOL)"
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\DeepSleepCtrl" -DesiredValue 'Disabled'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
