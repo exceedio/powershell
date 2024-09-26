@@ -76,8 +76,8 @@ foreach ($GPO in $AllGPOs | Sort-Object DisplayName)
 
         # Add the result to the array
         $Results += [PSCustomObject]@{
-            'GPO Name' = $GPO.DisplayName
-            'GPO ID'   = $GPO.Id
+            'Name' = $GPO.DisplayName
+            'ID'   = $GPO.Id
             'Links'    = ($LinkLocations -join '; ')
         }
     }
@@ -85,5 +85,16 @@ foreach ($GPO in $AllGPOs | Sort-Object DisplayName)
 
 # Display the results in a table
 $Results | Format-Table -AutoSize
+
+foreach ($gpo in $Results)
+{
+    if (-not ($gpo.Links))
+    {
+        if ((Read-Host "$($gpo.Name) has no links; do you want to delete it? [y/n]") -eq 'y')
+        {
+            $gpo | Remove-GPO
+        }
+    }
+}
 
 Write-Host "Finished"
