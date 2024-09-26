@@ -85,3 +85,5 @@ foreach ($GPO in $AllGPOs | Sort-Object DisplayName)
 
 # Display the results in a table
 $Results | Format-Table -AutoSize
+
+Write-Host "Finished"
