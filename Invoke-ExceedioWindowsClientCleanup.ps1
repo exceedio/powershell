@@ -117,7 +117,7 @@ Remove-Item 'C:\Windows\memory.dmp' -Force -ErrorAction SilentlyContinue
 Remove-Item 'C:\ProgramData\Kaseya\Data\crashdumps\*.dmp' -Force -ErrorAction SilentlyContinue
 
 Write-Host "Removing temporary files from C:\Windows\Temp"
-Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt -File | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host "Removing temporary folders from C:\Windows\Temp"
 Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
