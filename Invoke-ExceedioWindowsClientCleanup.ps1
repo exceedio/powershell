@@ -6,8 +6,35 @@
     Safely cleans up disk space on a Windows client computer
 .DESCRIPTION
     Removes temporary files and crash dumps, cleans up unused user profiles,
-    and resets base using the DISM tool which removes the ability to uninstall
-    updates and service packs.
+    and optionally resets base using the DISM tool which removes the ability to
+    uninstall updates and service packs.
+
+    The default user profile freshness check uses 90 days. Profiles older than
+    90 days are removed without prompting. Profiles that are considered special
+    such as LocalService are never removed.
+
+    The component cleanup is optional and not enabled by default if you run
+    using the example below. You will need to download the script and run it
+    using the -PerformComponentCleanup switch to enable component cleanup.
+
+    Example output:
+
+    Starting
+    Free space on C: 13.95 GB, Percent Free: 11.88%
+    Removing memory dumps
+    Removing temporary files from C:\Windows\Temp
+    Removing temporary folders from C:\Windows\Temp
+    Removing stale user profiles
+    User profile C:\Users\Administrator is stale (02/23/2023 08:23:40)
+    User profile C:\Users\alice is not stale (07/22/2024 10:23:33)
+    User profile C:\Users\bob is stale (03/08/2023 16:48:14)
+    Skipping special profile C:\windows\ServiceProfiles\LocalService
+    Skipping special profile C:\windows\ServiceProfiles\NetworkService
+    Skipping special profile C:\windows\system32\config\systemprofile
+    Removing stale profile C:\Users\Administrator
+    Removing stale profile C:\Users\bob
+    Free space on C: 15.75 GB, Percent Free: 13.41%
+    Finished
 .EXAMPLE
     irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Invoke-ExceedioWindowsClientCleanup.ps1 | iex
 .NOTES
@@ -61,7 +88,7 @@ function Get-StaleUserProfiles
             
             if ($lastLoadTime -lt $UserProfileThreshold -and $lastUnloadTime -lt $UserProfileThreshold)
             {
-                Write-Host "User profile $localPath is stale ($lastUnloadTime)"
+                Write-Host "User profile $localPath is stale ($lastUnloadTime)" -ForegroundColor Yellow
                 $results += $profile
             } else
             {
@@ -97,7 +124,7 @@ Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -
 
 Write-Host "Removing stale user profiles"
 Get-StaleUserProfiles | ForEach-Object {
-    Write-Host "Removing stale profile $($_.LocalPath)"
+    Write-Host "Removing stale profile $($_.LocalPath)" -ForegroundColor  Yellow
     $_ | Remove-CimInstance
 }
 
