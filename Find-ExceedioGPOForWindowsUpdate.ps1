@@ -1,3 +1,30 @@
+#Requires -Version 5.1
+#Requires -RunAsAdministrator
+
+<#
+.SYNOPSIS
+    Finds, lists, and optionally deletes GPOs with Windows Update settings
+.DESCRIPTION
+    Intended to be run when converting a domain from GPO-based Windows Update
+    settings to one based on your RMM tool of choice. We're looking for any
+    settings related to Windows Update in group policy.
+
+    If you receive an error The request was aborted: Could not create SSL/TLS
+    secure channel when calling this then you must run the following first
+    when calling this using the example below then you must run the following
+    and then try your call again:
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+    This script is best run from a domain controller.
+.EXAMPLE
+    irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Find-ExceedioGPOForWindowsUpdate.ps1 | iex
+.NOTES
+    Filename: Find-ExceedioGPOForWindowsUpdate.ps1
+    Author:   jreese@exceedio.com
+    Modified: Sep 26, 2024
+#>
+
 # Import the GroupPolicy module
 Import-Module GroupPolicy
 
