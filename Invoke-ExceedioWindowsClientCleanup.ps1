@@ -33,7 +33,7 @@ function Get-StaleUserProfiles
 
     $results = @()
 
-    foreach ($profile in Get-CimInstance -ClassName Win32_UserProfile)
+    foreach ($profile in Get-CimInstance -ClassName Win32_UserProfile | Sort-Object LocalPath)
     {
         $localPath = $profile.LocalPath
 
@@ -97,10 +97,8 @@ Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -
 
 Write-Host "Removing stale user profiles"
 Get-StaleUserProfiles | ForEach-Object {
-    if ((Read-Host "Do you want to remove stale profile $($_.LocalPath)? [y/n]") -eq 'y')
-    {
-        $_ | Remove-CimInstance
-    }
+    Write-Host "Removing stale profile $($_.LocalPath)"
+    $_ | Remove-CimInstance
 }
 
 if ($PerformComponentCleanup)
