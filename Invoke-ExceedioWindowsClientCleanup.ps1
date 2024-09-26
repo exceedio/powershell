@@ -76,19 +76,32 @@ function Get-StaleUserProfiles
     $results
 }
 
-# dumps
+function Write-FreeSpace
+{
+    Write-Host (Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" | ForEach-Object { "Free space on C: $([math]::Round($_.FreeSpace / 1GB, 2)) GB, Percent Free: $([math]::Round(($_.FreeSpace / $_.Size) * 100, 2))%" })
+}
+
+Write-Host "Starting"
+Write-FreeSpace
+
+Write-Host "Removing memory dumps"
 Remove-Item 'C:\Windows\LiveKernelReports\*.dmp' -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item 'C:\Windows\memory.dmp' -Force -ErrorAction SilentlyContinue
 Remove-Item 'C:\ProgramData\Kaseya\Data\crashdumps\*.dmp' -Force -ErrorAction SilentlyContinue
 
-# temporary files
-Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt -File | Remove-Item -Force
+Write-Host "Removing temporary files from C:\Windows\Temp"
+Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt -File | Remove-Item -Force -ErrorAction SilentlyContinue
 
-# temporary directories
+Write-Host "Removing temporary folders from C:\Windows\Temp"
 Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
 
-# stale user profiles
-Get-StaleUserProfiles #| Remove-CimInstance
+Write-Host "Removing stale user profiles"
+Get-StaleUserProfiles | ForEach-Object {
+    if (Read-Host "Do you want to remove stale profile $($_.LocalPath)? [y/n]" -eq 'y')
+    {
+        $_ | Remove-CimInstance
+    }
+}
 
 if ($PerformComponentCleanup)
 {
@@ -96,4 +109,5 @@ if ($PerformComponentCleanup)
     & dism.exe /Online /Cleanup-Image /StartComponentCleanup /ResetBase
 }
 
+Write-FreeSpace
 Write-Host "Finished"
