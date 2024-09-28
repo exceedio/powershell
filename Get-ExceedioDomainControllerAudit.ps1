@@ -25,6 +25,8 @@ function Get-Forwarders
     Get-DnsServerForwarder | Select-Object @{Name='Addresses';Expression={$_.IPAddress -join ', '}}, UseRootHint
 }
 
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 $results = [PsCustomObject] @{
     'Hostname' = ([System.Net.Dns]::GetHostByName($env:computerName)).HostName.ToLower()
     'DnsServerForwarders' = Get-Forwarders
