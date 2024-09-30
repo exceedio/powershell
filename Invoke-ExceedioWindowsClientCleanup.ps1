@@ -116,6 +116,9 @@ Remove-Item 'C:\Windows\LiveKernelReports\*.dmp' -Recurse -Force -ErrorAction Si
 Remove-Item 'C:\Windows\memory.dmp' -Force -ErrorAction SilentlyContinue
 Remove-Item 'C:\ProgramData\Kaseya\Data\crashdumps\*.dmp' -Force -ErrorAction SilentlyContinue
 
+Write-Host "Removing Windows Error Reports"
+Remove-Item 'C:\ProgramData\Microsoft\Windows\WER' -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host "Removing temporary files from C:\Windows\Temp"
 Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remove-Item -Force -ErrorAction SilentlyContinue
 
