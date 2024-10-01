@@ -46,11 +46,13 @@ if (-not ($nuget))
 #
 if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
 {
-    Write-Host "Checking status of PSGallery repository"
     if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
     {
-        Write-Host "Trusting the PSGallery repository"
+        Write-Host "Configuring PSGallery repository as trusted"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
+    } else
+    {
+        Write-Host "PSGallery repository is already trusted"
     }
 } else
 {
