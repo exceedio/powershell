@@ -8,9 +8,11 @@
     This script makes BIOS setting changes that enable automatic power on of
     a Dell client computer every day at given time as well as whenver power is
     restored to a computer that has lost power.
-.PARAMETER AutoOnHr
-    The hour to automatically power on. Defaults to midnight.
-.PARAMETER AutoOnMn
+.PARAMETER Frequency
+    When do you want automatic power on to occur? Defaults to every day.
+.PARAMETER Hour
+    The hour to automatically power on. Defaults to 0 (midnight).
+.PARAMETER Minute
     The minute to automatically power on. Defaults to 5.
 .EXAMPLE
     irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Enable-ExceedioDellAutoOn.ps1 | iex
@@ -40,19 +42,15 @@ function Set-DellSmbiosValue
         $DesiredValue
     )
 
-    if ($value = (Get-Item -Path $Path -ErrorAction SilentlyContinue).CurrentValue)
+    $currentValue = (Get-Item -Path $Path -ErrorAction SilentlyContinue).CurrentValue
+
+    if ($currentValue -ne $DesiredValue)
     {
-        if ($value -ne $DesiredValue)
-        {
-            Set-Item -Path $Path -Value $DesiredValue -Force
-            Write-Host "Set $Path to $DesiredValue" -ForegroundColor Yellow
-        } else
-        {
-            Write-Host "$Path is already set to $DesiredValue"
-        }
+        Set-Item -Path $Path -Value $DesiredValue -Force
+        Write-Host "Set $Path to $DesiredValue" -ForegroundColor Yellow
     } else
     {
-        Write-Host "Problem getting $Path" -ForegroundColor Yellow
+        Write-Host "$Path is already set to $DesiredValue"
     }
 }
 
