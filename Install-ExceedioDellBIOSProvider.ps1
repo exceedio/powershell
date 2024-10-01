@@ -36,7 +36,7 @@ $nuget = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyCon
 if (-not ($nuget))
 {
     Write-Host "[+] Installing NuGet package provider"
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false
+    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false | Out-Null
 } else
 {
     Write-Host "[*] NuGet package provider version $($nuget.Version) is already installed"
