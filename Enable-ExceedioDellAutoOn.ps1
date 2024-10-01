@@ -54,11 +54,14 @@ function Set-DellSmbiosValue
     }
 }
 
-Set-ExecutionPolicy RemoteSigned -Scope Process
-
 Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Install-ExceedioDellBIOSProvider.ps1' | Invoke-Expression
 
-Import-Module DellBIOSProvider
+if (-not (Get-PSDrive -Name DellSmbios -ErrorAction SilentlyContinue))
+{
+    Write-Host "Importing DellBIOSProvider module"
+    Set-ExecutionPolicy RemoteSigned -Scope Process
+    Import-Module DellBIOSProvider
+}
 
 Write-Host "Configuring BIOS to automatically power on system"
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AcPwrRcvry" -DesiredValue 'On'
