@@ -28,8 +28,10 @@ param(
 
 #
 # We need to ensure that the Nuget package provider is installed on this system
+# and we attempt to do so silently. Important that -ListAvailable is used in the
+# call to Get-PackageProvider otherwise it prompts you to install on that step
 #
-$nuget = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
+$nuget = Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue
 if (-not ($nuget))
 {
     Write-Host "Installing NuGet package provider"
