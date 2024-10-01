@@ -29,10 +29,14 @@ param(
 #
 # We need to ensure that the Nuget package provider is installed on this system
 #
-if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue))
+$nuget = Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue
+if (-not ($nuget))
 {
     Write-Host "Installing NuGet package provider"
     Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false
+} else
+{
+    Write-Host "NuGet package provider version $($nuget.Version) is already installed"
 }
 
 #
@@ -48,6 +52,9 @@ if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
         Write-Host "Trusting the PSGallery repository"
         Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
     }
+} else
+{
+    Write-Host "PSGallery repository is not installed" -ForegroundColor Yellow
 }
 
 #
@@ -59,5 +66,7 @@ if (-not (Get-Module -ListAvailable -Name DellBIOSProvider))
 {
     Write-Host "Installing the DellBIOSProvider module"
     Install-Module -Name DellBIOSProvider -MinimumVersion 2.8.0 -Scope AllUsers -Force -Confirm:$false -ErrorAction Stop
+} else
+{
+    Write-Host "DellBIOSProvider module is already installed"
 }
-
