@@ -46,7 +46,7 @@ function Set-DellSmbiosValue
 
     if ($currentValue -ne $DesiredValue)
     {
-        Set-Item -Path $Path -Value $DesiredValue -Force
+        Set-Item -Path $Path -Value $DesiredValue -Force -ErrorAction SilentlyContinue
         Write-Host "[+] Set $Path to $DesiredValue" -ForegroundColor Yellow
     } else
     {
