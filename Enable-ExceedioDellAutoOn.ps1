@@ -53,7 +53,7 @@ function Set-DellSmbiosValue
     }
 }
 
-Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Enable-ExceedioDellWakeOnLan.ps1' | Invoke-Expression
+Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Install-ExceedioDellBIOSProvider.ps1' | Invoke-Expression
 
 Write-Host "Configuring BIOS to automatically power on system"
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AcPwrRcvry" -DesiredValue 'On'
