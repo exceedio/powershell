@@ -54,6 +54,13 @@ function Set-DellSmbiosValue
     }
 }
 
+$mfg = Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Manufacturer
+if ($mfg -notlike 'Dell*')
+{
+    Write-Host "[!] This script is not mean for $mfg systems" -ForegroundColor Yellow
+    return
+}
+
 Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Install-ExceedioDellBIOSProvider.ps1' | Invoke-Expression
 
 Write-Host "[*] Checking for existence of DellSmbios drive"
