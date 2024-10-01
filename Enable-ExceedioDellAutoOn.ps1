@@ -50,6 +50,9 @@ function Set-DellSmbiosValue
         {
             Write-Host "$Path is already set to $DesiredValue"
         }
+    } else
+    {
+        Write-Host "Problem getting $Path" -ForegroundColor Yellow
     }
 }
 
