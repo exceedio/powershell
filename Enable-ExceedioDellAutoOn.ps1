@@ -56,6 +56,8 @@ function Set-DellSmbiosValue
 
 Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Install-ExceedioDellBIOSProvider.ps1' | Invoke-Expression
 
+Import-Module DellBIOSProvider
+
 Write-Host "Configuring BIOS to automatically power on system"
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AcPwrRcvry" -DesiredValue 'On'
 Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOn" -DesiredValue $Frequency
