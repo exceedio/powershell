@@ -54,6 +54,8 @@ function Set-DellSmbiosValue
     }
 }
 
+Set-ExecutionPolicy RemoteSigned -Scope Process
+
 Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Install-ExceedioDellBIOSProvider.ps1' | Invoke-Expression
 
 Import-Module DellBIOSProvider
