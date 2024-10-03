@@ -103,6 +103,17 @@ function Get-StaleUserProfiles
     $results
 }
 
+function Clear-Folder
+{
+    param(
+        [Parameter()]
+        [string]
+        $Path
+    )
+
+    Get-ChildItem $Path -Recurse -Force | Remove-Item -Force -Recurse
+}
+
 function Write-FreeSpace
 {
     Write-Host (Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" | ForEach-Object { "Free space on C: $([math]::Round($_.FreeSpace / 1GB, 2)) GB, Percent Free: $([math]::Round(($_.FreeSpace / $_.Size) * 100, 2))%" })
@@ -125,11 +136,22 @@ Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remo
 Write-Host "Removing temporary folders from C:\Windows\Temp"
 Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
 
+Write-Host "Removing Adobe ARM files"
+Clear-Folder -Path 'C:\ProgramData\Adobe\ARM'
+
 Write-Host "Removing stale user profiles"
 Get-StaleUserProfiles | ForEach-Object {
     Write-Host "Removing stale profile $($_.LocalPath)" -ForegroundColor  Yellow
     $_ | Remove-CimInstance
 }
+
+Write-Host "Removing Outlook logs"
+Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp\Outlook Logging'
+
+Write-Host "Removing Teams cache (classic and new)"
+Clear-Folder -Path 'C:\Users\*\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams'
+Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Cache'
+Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage'
 
 if ($PerformComponentCleanup)
 {
