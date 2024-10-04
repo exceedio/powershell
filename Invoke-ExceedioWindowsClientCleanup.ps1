@@ -64,6 +64,12 @@ function Get-StaleUserProfiles
     {
         $localPath = $profile.LocalPath
 
+        if ($localPath.Trim().Length -eq 0)
+        {
+            Write-Host "Skipping blank profile"
+            continue
+        }
+
         if ($profile.Special)
         {
             Write-Host "Skipping special profile $localPath"
