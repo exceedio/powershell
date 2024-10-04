@@ -111,7 +111,7 @@ function Clear-Folder
         $Path
     )
 
-    Get-ChildItem $Path -Recurse -Force | Remove-Item -Force -Recurse
+    Get-ChildItem $Path -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse
 }
 
 function Write-FreeSpace
