@@ -153,6 +153,9 @@ Clear-Folder -Path 'C:\Users\*\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\Loca
 Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Cache'
 Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage'
 
+Write-Host "Removing Google Earth Cache"
+Clear-Folder -Path 'C:\Users\*\AppData\LocalLow\Google\GoogleEarth\Cache'
+
 if ($PerformComponentCleanup)
 {
     # windows component cleanup
