@@ -56,13 +56,13 @@ foreach ($vm in $vms)
         }
         if ($isDomainController)
         {
-            #$vm | Set-VM -AutomaticStopAction Shutdown -AutomaticStartDelay 0
+            $vm | Set-VM -AutomaticStopAction Shutdown -AutomaticStartDelay 0
             Write-Host "[+] Configured DC $($vm.Name) to shutdown on stop and start with no delay"
         }
         else
         {
             $delayInSeconds = Get-Random -Minimum 300 -Maximum 600
-            #$vm | Set-VM -AutomaticStopAction Save -AutomaticStartDelay $delayInSeconds
+            $vm | Set-VM -AutomaticStopAction Save -AutomaticStartDelay $delayInSeconds
             Write-Host "[+] Configured non-DC $($vm.Name) to save on stop and start with delay of $delayInSeconds seconds"
         }
     }
