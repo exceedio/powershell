@@ -11,6 +11,7 @@
     not domain controller). Role determiniation is made by interrogating
     port UDP/53.
 .EXAMPLE
+    irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Set-ExceedioVMStartAndStopAction.ps1
 .NOTES
     Filename : Set-ExceedioVMStartAndStopAction.ps1
     Author   : jreese@exceedio.com
@@ -28,6 +29,9 @@ Write-Host "[*] Found $($vms.Count) virtual machines"
 foreach ($vm in $vms)
 {
     Write-Host "[*] Assessing virtual machine $($vm.Name)"
+    Write-Host "[*] Current automatic stop action for $($vm.Name) is $($vm.AutomaticStopAction)"
+    Write-Host "[*] Current automatic start action for $($vm.Name) is $($vm.AutomaticStartAction)"
+    Write-Host "[*] Current automatic start delay for $($vm.Name) is $($vm.AutomaticStartDelay)"
     
     $netadapters = $vm | Get-VMNetworkAdapter
 
