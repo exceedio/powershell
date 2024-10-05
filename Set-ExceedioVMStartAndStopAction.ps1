@@ -25,7 +25,7 @@ param (
 Write-Host "[*] Obtaining list of virtual machines"
 $vms = @(Get-VM | Where-Object {$_.State -eq 'Running'})
 
-Write-Host "[*] Found $($vms.Count) virtual machines"
+Write-Host "[*] Found $($vms.Count) virtual machine(s)"
 foreach ($vm in $vms)
 {
     Write-Host "[*] Assessing virtual machine $($vm.Name)"
