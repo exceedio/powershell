@@ -276,7 +276,7 @@ $updatedIni += "interval=1m"
 $updatedIni += "alias=checkin"
 $updatedIni += "command=check_ok"
 
-if (Get-Printer | Where-Object Shared -eq $true)
+if ((Get-Module -ListAvailable -Name 'PrintManagement') -and (Get-Printer | Where-Object Shared -eq $true))
 {
     Write-Host "[+] Adding printer checks"
     #
