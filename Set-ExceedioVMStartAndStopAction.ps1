@@ -43,7 +43,7 @@ foreach ($vm in $vms)
         {
             try {
                 Write-Host "[*] Sending DNS request to $($vm.Name) at $ip"
-                $response = Resolve-DnsName -Name 'localhost' -Server $ip -ErrorAction Stop
+                $response = Resolve-DnsName -Name 'localhost' -Server $ip -DnsOnly -QuickTimeout -ErrorAction Stop
                 if ($response)
                 {
                     $isDomainController = $true
