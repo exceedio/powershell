@@ -11,11 +11,11 @@
     not domain controller). Role determiniation is made by interrogating
     port UDP/53.
 .EXAMPLE
-    irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Set-ExceedioVMStartAndStopAction.ps1
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Set-ExceedioVMStartAndStopAction.ps1
 .NOTES
     Filename : Set-ExceedioVMStartAndStopAction.ps1
     Author   : jreese@exceedio.com
-    Modified : Oct 5, 2024
+    Modified : Oct 6, 2024
 #>
 
 [CmdletBinding()]
