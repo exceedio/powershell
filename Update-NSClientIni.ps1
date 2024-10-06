@@ -1,33 +1,34 @@
 #Requires -Version 5.1
+#Requires -RunAsAdministrator 
 
 <#
-    .SYNOPSIS
-        Updates nsclient.ini on the local system based on the current system
-        attributes and configuration
-    .DESCRIPTION
-        This script will dynamically determine which monitors need to be active
-        on a system and configure the nsclient.ini on the local system thusly.
-    .EXAMPLE
-        PS C:\> Update-NSClientIni.ps1
-    .EXAMPLE
-        PS C:\> irm https://raw.githubusercontent.com/exceedio/powershell/master/Update-NSClientIni.ps1 | iex
-    .PARAMETER NSClientIni
-        The path to write to and/or the path of the existing nsclient.ini file.
-        Defaults to C:\Program Files\NSClient\nsclient.ini if omitted.
-    .PARAMETER Hostname
-        The hostname of the local system to be used in the nsclient.ini file.
-        Does not necessarily need to correspond to the actual hostname of the
-        system. If omitted it will default to the hostname in the existing
-        nsclient.ini at the location specified by the NSClientIni parameter.
-    .PARAMETER EncryptionKey
-        The password to use when AES encrypting data to be sent to the server
-        specified by the Address parameter. If omitted it will default to the
-        password in the existing nsclient.ini at the location specified by the
-        NSClientIni parameter.
-    .PARAMETER Address
-        The network address (name or IP) of the Icinga server. If omitted it
-        will default to the address in the existing nsclient.ini at the location
-        specified by the NSClientIni parameter.
+.SYNOPSIS
+    Updates nsclient.ini on the local system based on the current system
+    attributes and configuration
+.DESCRIPTION
+    This script will dynamically determine which monitors need to be active
+    on a system and configure the nsclient.ini on the local system thusly.
+.EXAMPLE
+    PS C:\> Update-ExceedioNSClientIni.ps1
+.EXAMPLE
+    PS C:\> irm https://raw.githubusercontent.com/exceedio/powershell/master/Update-ExceedioNSClientIni.ps1 | iex
+.PARAMETER NSClientIni
+    The path to write to and/or the path of the existing nsclient.ini file.
+    Defaults to C:\Program Files\NSClient\nsclient.ini if omitted.
+.PARAMETER Hostname
+    The hostname of the local system to be used in the nsclient.ini file.
+    Does not necessarily need to correspond to the actual hostname of the
+    system. If omitted it will default to the hostname in the existing
+    nsclient.ini at the location specified by the NSClientIni parameter.
+.PARAMETER EncryptionKey
+    The password to use when AES encrypting data to be sent to the server
+    specified by the Address parameter. If omitted it will default to the
+    password in the existing nsclient.ini at the location specified by the
+    NSClientIni parameter.
+.PARAMETER Address
+    The network address (name or IP) of the Icinga server. If omitted it
+    will default to the address in the existing nsclient.ini at the location
+    specified by the NSClientIni parameter.
 #>
 
 [CmdletBinding()]
@@ -36,6 +37,10 @@ param(
     [Parameter(Mandatory=$false)]
     [string]
     $NSClientIni = "C:\Program Files\NSClient++\nsclient.ini",
+
+    [Parameter(Mandatory=$false)]
+    [string]
+    $CustomServiceIgnorePath = "C:\Program Files\NSClient++\ignore_services.txt",
 
     [Parameter(Mandatory=$false)]
     [string]
@@ -102,6 +107,13 @@ function Get-ServiceFilter
         'wuauserv'
     )
 
+    if (Test-Path $CustomServiceIgnorePath)
+    {
+        Write-Host "[+] Adding custom service ignores from $CustomServiceIgnorePath"
+        $custom = Get-Content -Path $CustomServiceIgnorePath
+        $servicesToIgnoreExact += $custom
+    }
+
     $serviceFilter = @(
         "start_type='auto'"
     )
@@ -139,6 +151,7 @@ if (@($Hostname, $EncryptionKey, $Address) | ForEach-Object {$_ -eq $null -or [s
     }
 }
 
+Write-Host "[+] Generating common configuration and checks"
 #
 # here's where we start building the content of the new nsclient.ini
 # file including comments at the top about the fact that the file was
@@ -190,7 +203,7 @@ $updatedIni += "exe = cmd /c %SCRIPT% %ARGS%"
 $updatedIni += ""
 $updatedIni += "[/settings/external scripts/scripts]"
 $updatedIni += ""
-$updatedIni += "check_omsa=scripts/check_openmanage.exe --timeout 60"
+$updatedIni += "check_omsa=scripts/check_openmanage.exe --timeout 120"
 $updatedIni += ""
 $updatedIni += "[/settings/external scripts/wrapped scripts]"
 $updatedIni += ""
@@ -257,13 +270,6 @@ $updatedIni += "; away - will stay in warning state for 12 hours"
 $updatedIni += ";"
 $updatedIni += "uptime = check_uptime ""warn=uptime<12h"" ""crit=uptime<30m"""
 $updatedIni += ""
-$updatedIni += ";"
-$updatedIni += "; network values are in bits per second and we are assuming that"
-$updatedIni += "; we are using a 1Gb network connection so we are indicating warn"
-$updatedIni += "; at 80% and crit at 90% of available bandwidth"
-$updatedIni += ";"
-$updatedIni += "check_network warn=""total>800000000"" crit=""total>900000000"""
-$updatedIni += ""
 $updatedIni += "[/settings/scheduler/schedules/checkin]"
 $updatedIni += ""
 $updatedIni += "interval=1m"
@@ -272,6 +278,7 @@ $updatedIni += "command=check_ok"
 
 if (Get-Printer | Where-Object Shared -eq $true)
 {
+    Write-Host "[+] Adding printer checks"
     #
     # local system is sharing at least one printer so we're going
     # to assume that we're a print server and check printer status
@@ -287,6 +294,7 @@ if (Get-Printer | Where-Object Shared -eq $true)
 
 if (Test-Path -Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')
 {
+    Write-Host "[+] Adding Dell OMSA checks"
     #
     # local system has Dell management components installed so we're
     # going to check status of Dell hardware components every three
@@ -302,6 +310,7 @@ if (Test-Path -Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')
 
 if (@(4,5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRole)
 {
+    Write-Host "[+] Adding domain controller checks"
     #
     # local system is a domain controller so we're going to check that
     # the clock is in sync with a known good source of time every 24
@@ -319,6 +328,7 @@ if (@(4,5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRol
 #
 # create a backup of the existing nsclient.ini file
 #
+Write-Host "[+] Creating backup of $NSClientIni"
 Copy-Item `
     -Path $NSClientIni `
     -Destination "$NSClientIni.backup-$(Get-Date -Format "yyyyMMdd")" `
@@ -327,6 +337,7 @@ Copy-Item `
 #
 # save the new nsclient.ini file using utf8 encoding
 #
+Write-Host "[+] Saving new configuration at $NSClientIni"
 $updatedIni -join "`n" | Out-File `
     -FilePath $NSClientIni `
     -Encoding utf8 `
@@ -341,7 +352,9 @@ if ($service = Get-Service nscp)
 {
     if ($service.Status -eq 'Running')
     {
+        Write-Host "[*] Restarting nscp service"
         $service | Restart-Service
     }
 }
 
+Write-Host "[*] Finished"
