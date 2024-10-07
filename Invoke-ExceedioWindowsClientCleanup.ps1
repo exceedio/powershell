@@ -162,6 +162,10 @@ Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Service Worker\Ca
 Write-Host "Removing Google Earth Cache"
 Clear-Folder -Path 'C:\Users\*\AppData\LocalLow\Google\GoogleEarth\Cache'
 
+Write-Host "Removing Edge Cache"
+Clear-Folder -Path 'C:\Users\*\AppData\Local\Microsoft\Edge\User Data\Default\Cache\Cache_Data'
+Clear-Folder -Path 'C:\Users\*\AppData\Local\Microsoft\Edge\User Data\Default\Service Worker\CacheStorage'
+
 if ($PerformComponentCleanup)
 {
     # windows component cleanup
