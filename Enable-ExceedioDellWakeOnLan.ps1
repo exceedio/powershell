@@ -18,58 +18,11 @@
 .NOTES
     Filename: Enable-ExceedioDellWakeOnLan.ps1
     Author:   jreese@exceedio.com
-    Modified: Sep 25, 2024
+    Modified: Oct 9, 2024
 #>
 
 [CmdletBinding()]
 param()
-
-# Older versions of PowerShell default to TLS 1.0, which is incompatible with
-# modern repositories like the PowerShell Gallery. Setting the security protocol
-# to TLS 1.2 ensures secure connections
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
-if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue))
-{
-    Write-Host "Installing NuGet package provider"
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -ForceBootstrap -Confirm:$false
-}
-
-if (Get-PSRepository -Name PSGallery -ErrorAction Stop)
-{
-    Write-Host "Checking status of PSGallery repository"
-    if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
-    {
-        Write-Host "Trusting the PSGallery repository"
-        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction Stop
-    }
-}
-
-if (-not (Get-Module -ListAvailable -Name DellBIOSProvider))
-{
-    Write-Host "Installing the DellBIOSProvider module"
-    Install-Module -Name DellBIOSProvider -MinimumVersion 2.8.0 -Scope AllUsers -Force -Confirm:$false -ErrorAction Stop
-}
-
-function Set-DellSmbiosValue
-{
-    param (
-        $Path,
-        $DesiredValue
-    )
-
-    if ($value = (Get-Item -Path $Path -ErrorAction SilentlyContinue).CurrentValue)
-    {
-        if ($value -ne $DesiredValue)
-        {
-            Set-Item -Path $Path -Value $DesiredValue -Force
-            Write-Host "Set $Path to $DesiredValue" -ForegroundColor Yellow
-        } else
-        {
-            Write-Host "$Path is already set to $DesiredValue"
-        }
-    }
-}
 
 function Set-NetAdapterAdvancedPropertyIfExists
 {
@@ -91,17 +44,11 @@ function Set-NetAdapterAdvancedPropertyIfExists
     }
 }
 
-Write-Host "Configuring BIOS to automatically power on system"
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AcPwrRcvry" -DesiredValue 'On'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOn" -DesiredValue 'Everyday'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOnHr" -DesiredValue '0'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\AutoOnMn" -DesiredValue '5'
-
-Write-Host "Configuring BIOS to support Wake On Lan (WOL)"
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\DeepSleepCtrl" -DesiredValue 'Disabled'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
-Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\WakeOnLan" -DesiredValue 'LanOnly'
+#Write-Host "Configuring BIOS to support Wake On Lan (WOL)"
+#Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
+#Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\DeepSleepCtrl" -DesiredValue 'Disabled'
+#Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\BlockSleep" -DesiredValue 'Disabled'
+#Set-DellSmbiosValue -Path "DellSmbios:\PowerManagement\WakeOnLan" -DesiredValue 'LanOnly'
 
 if ($nic = Get-NetAdapter | Where-Object {$_.Status -eq 'Up' -and $_.PhysicalMediaType -eq '802.3'})
 {
