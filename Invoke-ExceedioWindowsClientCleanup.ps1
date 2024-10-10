@@ -70,6 +70,18 @@ function Get-StaleUserProfiles
             continue
         }
 
+        if ($localPath -like 'C:\Users\.NET*')
+        {
+            Write-Host "Skipping .NET profile $localPath"
+            continue
+        }
+
+        if ($localPath -like 'C:\Windows\ServiceProfile\*')
+        {
+            Write-Host "Skipping service profile $localPath"
+            continue
+        }
+
         if ($profile.Special)
         {
             Write-Host "Skipping special profile $localPath"
