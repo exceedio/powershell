@@ -76,7 +76,7 @@ function Get-StaleUserProfiles
             continue
         }
 
-        if ($localPath -like 'C:\Windows\ServiceProfile\*')
+        if ($localPath -like 'C:\Windows\ServiceProfiles\*')
         {
             Write-Host "Skipping service profile $localPath"
             continue
