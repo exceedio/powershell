@@ -108,7 +108,8 @@ function Get-ServiceFilter
         'TrustedInstaller',
         'VSS',
         'WbioSrvc',
-        'wuauserv'
+        'wuauserv',
+        'ZeroConfigService'
     )
 
     if (Test-Path $CustomServiceIgnorePath)
