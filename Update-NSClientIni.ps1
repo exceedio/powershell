@@ -44,6 +44,10 @@ param(
 
     [Parameter(Mandatory=$false)]
     [string]
+    $CustomIcmpCheckPath = "C:\Program Files\NSClient++\check_icmp.txt",
+
+    [Parameter(Mandatory=$false)]
+    [string]
     $Hostname,
 
     [Parameter(Mandatory=$false)]
@@ -323,6 +327,18 @@ if (@(4,5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRol
     $updatedIni += "interval=24h"
     $updatedIni += "alias=time"
     $updatedIni += "command=check_time"
+}
+
+if (Test-Path $CustomIcmpCheckPath)
+{
+    Write-Host "[+] Adding custom ICMP checks from $CustomIcmpCheckPath"
+    $targets = @(Get-Content -Path $CustomIcmpCheckPath)
+    $updatedIni += ""
+    $updatedIni += "[/settings/scheduler/schedules/icmp]"
+    $updatedIni += ""
+    $updatedIni += "interval=2m"
+    $updatedIni += "alias=icmp"
+    $updatedIni += "command=check_icmp ""$($targets -join ',')"""
 }
 
 #
