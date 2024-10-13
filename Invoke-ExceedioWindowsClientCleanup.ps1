@@ -53,6 +53,71 @@ param(
     $PerformComponentCleanup
 )
 
+function Set-CleanManagerStateFlags
+{
+    #
+    # this number can be anything you want; it's simply a label that
+    # is used to identify a set of state flags that you use when calling
+    # cleanmgr.exe from the command line for silent operation
+    #
+    $stateFlagsId = '5900'
+
+    #
+    # these items are generally considered safe to clean on any system
+    # without causing harm to the system
+    #
+    $itemsToClean = @(
+        'Active Setup Temp Folders',
+        'BranchCache',
+        'Content Indexer Cleaner',
+        'Delivery Optimization Files',
+        'D3D Shader Cache',
+        'Device Driver Packages',
+        'Downloaded Program Files',
+        'GameNewsFiles',
+        'GameStatisticsFiles',
+        'GameUpdateFiles',
+        'Internet Cache Files',
+        'Memory Dump Files',
+        'Offline Pages Files',
+        'Old ChkDsk Files',
+        'Previous Installations',
+        'RetailDemo Offline Content',
+        'Service Pack Cleanup',
+        'Setup Log Files',
+        'System error memory dump files',
+        'System error minidump files',
+        'Temporary Files',
+        'Temporary Setup Files',
+        'Temporary Sync Files',
+        'Thumbnail Cache',
+        'Update Cleanup',
+        'Upgrade Discarded Files',
+        'Windows Defender',
+        'Windows Error Reporting Archive Files',
+        'Windows Error Reporting Files',
+        'Windows Error Reporting Queue Files',
+        'Windows Error Reporting System Archive Files',
+        'Windows Error Reporting System Queue Files',
+        'Windows Error Reporting Temp Files',
+        'Windows ESD installation files',
+        'Windows Upgrade Log Files'
+    )
+
+    $pathToVolumeCaches = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches'
+
+    foreach ($item in $itemsToClean)
+    {
+        $fullPath = "$pathToVolumeCaches\$item"
+
+        if (Test-Path -Path $fullPath)
+        {
+            Write-Host "Enabling automatic clean for '$item'"
+            Set-ItemProperty -Path $fullPath -Name "StateFlags$stateFlagsId" -Type DWord -Value 2
+        }
+    }
+}
+
 function Get-StaleUserProfiles
 {
     [OutputType([CimInstance[]])]
@@ -162,6 +227,12 @@ Get-StaleUserProfiles | ForEach-Object {
     Write-Host "Removing stale profile $($_.LocalPath)" -ForegroundColor  Yellow
     $_ | Remove-CimInstance
 }
+
+Write-Host "Configuring cleanmgr.exe settings"
+Set-CleanManagerStateFlags
+
+Write-Host "Running cleanmgr.exe"
+Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
 
 Write-Host "Removing Outlook logs"
 Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp\Outlook Logging'
