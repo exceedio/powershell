@@ -232,7 +232,7 @@ Write-Host "Configuring cleanmgr.exe settings"
 Set-CleanManagerStateFlags
 
 Write-Host "Running cleanmgr.exe"
-Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
+#Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
 
 Write-Host "Removing Outlook logs"
 Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp\Outlook Logging'
