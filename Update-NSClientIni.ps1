@@ -85,6 +85,7 @@ function Get-ServiceFilter
         'BITS',
         'CDPSvc',
         'dbupdate',
+        'dmwappushservice',
         'DoSvc',
         'edgeupdate',
         'GISvc',
@@ -284,12 +285,12 @@ $updatedIni += "command=check_ok"
 if ((Get-Module -ListAvailable -Name 'PrintManagement') -and (Get-Printer | Where-Object Shared -eq $true))
 {
     Write-Host "[+] Adding printer checks"
-    #
-    # local system is sharing at least one printer so we're going
-    # to assume that we're a print server and check printer status
-    # every one hour
-    #
     $updatedIni += ""
+    $updatedIni += ";"
+    $updatedIni += "; local system is sharing at least one printer so"
+    $updatedIni += "; we're going to assume that we're a print server"
+    $updatedIni += "; and check printer status every one hour"
+    $updatedIni += ";"
     $updatedIni += "[/settings/scheduler/schedules/printers]"
     $updatedIni += ""
     $updatedIni += "interval=1h"
@@ -300,12 +301,12 @@ if ((Get-Module -ListAvailable -Name 'PrintManagement') -and (Get-Printer | Wher
 if (Test-Path -Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')
 {
     Write-Host "[+] Adding Dell OMSA checks"
-    #
-    # local system has Dell management components installed so we're
-    # going to check status of Dell hardware components every three
-    # hours
-    #
     $updatedIni += ""
+    $updatedIni += ";"
+    $updatedIni += "; local system has Dell management components installed"
+    $updatedIni += "; so we're going to check status of Dell components every"
+    $updatedIni += "; three hours"
+    $updatedIni += ";"
     $updatedIni += "[/settings/scheduler/schedules/omsa]"
     $updatedIni += ""
     $updatedIni += "interval=3h"
@@ -316,13 +317,14 @@ if (Test-Path -Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')
 if (@(4,5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRole)
 {
     Write-Host "[+] Adding domain controller checks"
-    #
-    # local system is a domain controller so we're going to check that
-    # the clock is in sync with a known good source of time every 24
-    # hours. If you get too aggressive with checking this information
-    # you will be blocked by the time source due to throttling
-    #
     $updatedIni += ""
+    $updatedIni += ";"
+    $updatedIni += "; local system is a domain controller so we're going"
+    $updatedIni += "; to check that the clock is in sync with a known good"
+    $updatedIni += "; source of time every 24 hours - if you get too"
+    $updatedIni += "; aggressive with checking the time source you will be"
+    $updatedIni += "; blocked by the time source due to the throttling"
+    $updatedIni += ";"
     $updatedIni += "[/settings/scheduler/schedules/time]"
     $updatedIni += ""
     $updatedIni += "interval=24h"
@@ -335,6 +337,12 @@ if (Test-Path $CustomIcmpCheckPath)
     Write-Host "[+] Adding custom ICMP checks from $CustomIcmpCheckPath"
     $targets = @(Get-Content -Path $CustomIcmpCheckPath)
     $updatedIni += ""
+    $updatedIni += ";"
+    $updatedIni += "; this system is used to perform icmp checks against"
+    $updatedIni += "; systems that do not support the NSClient++ agent -"
+    $updatedIni += "; see the file check_icmp.txt for a list of systems"
+    $updatedIni += "; that are monitored"
+    $updatedIni += ";"
     $updatedIni += "[/settings/scheduler/schedules/icmp]"
     $updatedIni += ""
     $updatedIni += "interval=2m"
