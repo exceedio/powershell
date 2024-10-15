@@ -29,14 +29,14 @@ if (-not ($Name))
     $Name = Read-Host "Name of printer to remove"
 }
 
-foreach ($gpo in (Get-GPO -All))
+foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
 {
-    Write-Host "[*] Analyzing $($gpo.Name)"
+    Write-Host "[*] Analyzing $($gpo.DisplayName)"
     $report = Get-GPOReport -Guid $gpo.Id -ReportType Xml
 
     if ($report -match $Name)
     {
-        Write-Host "[!] Found reference to $Name in $($gpo.Name)"
+        Write-Host "[!] Found reference to $Name in $($gpo.DisplayName)"
     }
 }
 
