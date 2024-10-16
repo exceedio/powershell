@@ -6,6 +6,12 @@
 .SYNOPSIS
     Removes a retired printer
 .DESCRIPTION
+    When run without arguments this script will enumerate printers that are shared
+    from the local system and prompt you for a printer name. The script will attempt
+    to locate the printer in group policy and, if found in group policy preferences,
+    will update the printer action to Delete so that it is removed from client
+    machines on next group policy refresh. The script will then remove the printer
+    from print management on the local system.
 .EXAMPLE
     PS C:\> Remove-ExceedioPrinter.ps1
 .EXAMPLE
@@ -70,6 +76,12 @@ foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
             Write-Warning "Expected to find user printer preferences at $path"
         }
     }
+}
+
+if ($instance = Get-Printer -Name $Name)
+{
+    Write-Host "[-] Removing printer $Name from $([System.Environment]::MachineName)"
+    Remove-Printer -Name $instance
 }
 
 Write-Host "[*] Finished"
