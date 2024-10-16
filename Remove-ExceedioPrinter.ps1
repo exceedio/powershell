@@ -9,6 +9,8 @@
 .EXAMPLE
     PS C:\> Remove-ExceedioPrinter.ps1
 .EXAMPLE
+    PS C:\> irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Remove-ExceedioPrinter.ps1 | iex
+.EXAMPLE
     PS C:\> [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/exceedio/powershell/refs/heads/master/Remove-ExceedioPrinter.ps1 | iex
 .PARAMETER Name
     The name of the printer to remove
@@ -29,12 +31,13 @@ if (-not ($Name))
     $Name = Read-Host "Name of printer to remove"
 }
 
+Write-Host "[*] Searching for printer $Name in group policies..."
 foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
 {
     Write-Host "[*] Analyzing $($gpo.DisplayName)"
     $report = Get-GPOReport -Guid $gpo.Id -ReportType Xml
 
-    if ($report -match $Name)
+    if ($report -like "*$Name*")
     {
         Write-Host "[!] Found reference to $Name in $($gpo.DisplayName)"
     }
