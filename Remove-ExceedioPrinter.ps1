@@ -24,6 +24,9 @@ param(
     $Name
 )
 
+$domain = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().Name
+Write-Host "[*] Current active directory domain is $domain"
+
 if (-not ($Name))
 {
     Write-Host "[*] Gathering printer list"
@@ -40,6 +43,30 @@ foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
     if ($report -like "*$Name*")
     {
         Write-Host "[!] Found reference to $Name in $($gpo.DisplayName)"
+        $path = "\\$domain\sysvol\$domain\Policies\{$($gpo.Id)}\User\Preferences\Printers\Printers.xml"
+        if (Test-Path $path)
+        {
+            Write-Host "[*] Found user printer preferences at $path"
+            [xml] $xml = Get-Content $path
+            $printer = $xml.Printers.SharedPrinter | Where-Object { $_.name -eq "$Name" }
+            if ($printer)
+            {
+                $action = $printer.Properties.action
+                Write-Host "[*] Printer $Name is current set to $action"
+                if ($action -ne 'D')
+                {
+                    Write-Host "[!] Setting printer $Name action to [D]elete"
+                    $printer.Properties.action = 'D'
+                    $printer.Save($path)
+                }
+            } else
+            {
+                Write-Warning "Did not find $Name in $path"
+            }
+        } else
+        {
+            Write-Warning "Expected to find user printer preferences at $path"
+        }
     }
 }
 
