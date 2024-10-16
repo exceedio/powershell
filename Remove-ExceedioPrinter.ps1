@@ -55,9 +55,11 @@ foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
                 Write-Host "[*] Printer $Name is current set to $action"
                 if ($action -ne 'D')
                 {
+                    Write-Host "[*] Creating backup of $path"
+                    Copy-Item -Path $path -Destination "$env:temp\Printers.xml"
                     Write-Host "[!] Setting printer $Name action to [D]elete"
                     $printer.Properties.action = 'D'
-                    $printer.Save($path)
+                    $xml.Save($path)
                 }
             } else
             {
