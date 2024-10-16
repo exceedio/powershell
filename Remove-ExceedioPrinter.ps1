@@ -81,7 +81,7 @@ foreach ($gpo in (Get-GPO -All | Sort-Object DisplayName))
 if ($instance = Get-Printer -Name $Name)
 {
     Write-Host "[-] Removing printer $Name from $([System.Environment]::MachineName)"
-    Remove-Printer -Name $instance
+    $instance | Remove-Printer
 }
 
 Write-Host "[*] Finished"
