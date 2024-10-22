@@ -235,8 +235,8 @@ Get-StaleUserProfiles | ForEach-Object {
 #Write-Host "Running cleanmgr.exe"
 #Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
 
-Write-Host "Removing Outlook logs"
-Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp\Outlook Logging'
+Write-Host "Removing user temporary files"
+Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp'
 
 Write-Host "Removing Teams cache (classic and new)"
 Clear-Folder -Path 'C:\Users\*\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams'
