@@ -247,7 +247,7 @@ $updatedIni += ";"
 $updatedIni += "; average cpu time over 15 minutes should not be greater than"
 $updatedIni += "; 95% or we may have a problem"
 $updatedIni += ";"
-$updatedIni += "cpu = check_cpu ""warn=load>85"" ""crit=load>95"" time=15m"
+$updatedIni += "cpu = check_cpu ""warn=load>85"" ""crit=load>95"" time=60m"
 $updatedIni += ""
 $updatedIni += ";"
 $updatedIni += "; all volumes should have more than 2% free space"
@@ -314,7 +314,7 @@ if (Test-Path -Path 'C:\Program Files\Dell\SysMgt\oma\bin\omreport.exe')
     $updatedIni += "command=check_omsa"
 }
 
-if (@(4,5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRole)
+if (@(5) -contains (Get-CimInstance -ClassName Win32_ComputerSystem).DomainRole)
 {
     Write-Host "[+] Adding domain controller checks"
     $updatedIni += ""
