@@ -214,10 +214,11 @@ Write-Host "Removing Windows Error Reports"
 Remove-Item 'C:\ProgramData\Microsoft\Windows\WER' -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "Removing temporary files from C:\Windows\Temp"
-Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remove-Item -Force -ErrorAction SilentlyContinue
+#Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem C:\Windows\Temp\* -Recurse -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-Write-Host "Removing temporary folders from C:\Windows\Temp"
-Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+#Write-Host "Removing temporary folders from C:\Windows\Temp"
+#Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
 
 Write-Host "Removing Adobe ARM files"
 Clear-Folder -Path 'C:\ProgramData\Adobe\ARM'
@@ -228,10 +229,10 @@ Get-StaleUserProfiles | ForEach-Object {
     $_ | Remove-CimInstance
 }
 
-Write-Host "Configuring cleanmgr.exe settings"
-Set-CleanManagerStateFlags
+#Write-Host "Configuring cleanmgr.exe settings"
+#Set-CleanManagerStateFlags
 
-Write-Host "Running cleanmgr.exe"
+#Write-Host "Running cleanmgr.exe"
 #Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
 
 Write-Host "Removing Outlook logs"
