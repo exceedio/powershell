@@ -248,6 +248,9 @@ foreach ($subfolder in $subfolders)
     Clear-Folder -Path "C:\Users\*\$subfolder"
 }
 
+Write-Host "Removing recycle bins"
+Clear-Folder -Path 'C:\$Recycle.Bin'
+
 if ($PerformComponentCleanup)
 {
     # windows component cleanup
