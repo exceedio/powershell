@@ -214,11 +214,7 @@ Write-Host "Removing Windows Error Reports"
 Remove-Item 'C:\ProgramData\Microsoft\Windows\WER' -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "Removing temporary files from C:\Windows\Temp"
-#Get-ChildItem C:\Windows\Temp\* -Include *.tmp, *.log, *.txt, *.dat -File | Remove-Item -Force -ErrorAction SilentlyContinue
 Get-ChildItem C:\Windows\Temp\* -Recurse -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-
-#Write-Host "Removing temporary folders from C:\Windows\Temp"
-#Get-ChildItem 'C:\Windows\Temp\*.tmp' -Directory | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
 
 Write-Host "Removing Adobe ARM files"
 Clear-Folder -Path 'C:\ProgramData\Adobe\ARM'
@@ -229,26 +225,28 @@ Get-StaleUserProfiles | ForEach-Object {
     $_ | Remove-CimInstance
 }
 
-#Write-Host "Configuring cleanmgr.exe settings"
-#Set-CleanManagerStateFlags
+$subfolders = (
+    'AppData\Local\CrashDumps',
+    'AppData\Local\Temp',
+    'AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams',
+    'AppData\Local\Microsoft\Edge\User Data\Default\Cache\Cache_Data',
+    'AppData\Local\Microsoft\Edge\User Data\Default\Service Worker\CacheStorage',
+    'AppData\Local\Microsoft\Windows\WebCache',
+    'AppData\Local\Microsoft\Windows\WER',
+    'AppData\Local\Microsoft\Terminal Server Client\Cache',
+    'AppData\LocalLow\Google\GoogleEarth\Cache',
+    'AppData\Roaming\Default\Cache',
+    'AppData\Roaming\Default\Code Cache',
+    'AppData\Roaming\Default\Service Worker',
+    'AppData\Roaming\Microsoft\Teams\Cache',
+    'AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage'
+)
 
-#Write-Host "Running cleanmgr.exe"
-#Start-Process -FilePath "cleanmgr.exe" -ArgumentList @("/sagerun:5900") -NoNewWindow -Wait
-
-Write-Host "Removing user temporary files"
-Clear-Folder -Path 'C:\Users\*\AppData\Local\Temp'
-
-Write-Host "Removing Teams cache (classic and new)"
-Clear-Folder -Path 'C:\Users\*\AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams'
-Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Cache'
-Clear-Folder -Path 'C:\Users\*\AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage'
-
-Write-Host "Removing Google Earth Cache"
-Clear-Folder -Path 'C:\Users\*\AppData\LocalLow\Google\GoogleEarth\Cache'
-
-Write-Host "Removing Edge Cache"
-Clear-Folder -Path 'C:\Users\*\AppData\Local\Microsoft\Edge\User Data\Default\Cache\Cache_Data'
-Clear-Folder -Path 'C:\Users\*\AppData\Local\Microsoft\Edge\User Data\Default\Service Worker\CacheStorage'
+Write-Host "Removing user-specific temporary folders and cache"
+foreach ($subfolder in $subfolders)
+{
+    Clear-Folder -Path "C:\Users\*\$subfolder"
+}
 
 if ($PerformComponentCleanup)
 {
