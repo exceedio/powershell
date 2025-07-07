@@ -7,7 +7,7 @@ to ensure that a machine is in a desired state.
 
 ## When to use
 
-- Provisioning a new Dell Hypervisor with Windows Server 2022 Standard
+- Provisioning a new Dell Hypervisor with Windows Server 2025 Standard
 
 ## How to use
 
