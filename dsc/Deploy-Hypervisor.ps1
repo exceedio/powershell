@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
-    Initializes a Dell server running Windows Server 2022 for Hypervisor role.
+    Initializes a Dell server running Windows Server 2022/2025 for Hypervisor role.
 .DESCRIPTION
-    Prepares a fresh installation of Windows Server 2022 on a Dell PowerEdge Rxxx server.
+    Prepares a fresh installation of Windows Server 2022/2025 on a Dell PowerEdge Rxxx server.
     This scripts makes a lot of assumptions about how you want your Hyper-V parent to be
     configured. Do not blindly run this script.
 .EXAMPLE
@@ -10,7 +10,7 @@
 .NOTES
     Filename : Deploy-Hypervisor.ps1
     Author   : jreese@exceedio.com
-    Modified : Jan 24, 2024
+    Modified : Jul 7, 2025
 #>
 
 Configuration Hypervisor {
@@ -299,13 +299,14 @@ Configuration Hypervisor {
             SetScript  = {
                 $folder = $using:VirtualMachineISOPath
                 $filenames = @(
+                    'SW_DVD9_Win_Server_STD_CORE_2019_1809.13_64Bit_English_DC_STD_MLF_X22-57176.ISO',
                     'SW_DVD9_Win_Server_STD_CORE_2022_2108.7_64Bit_English_DC_STD_MLF_X23-09508.ISO',
-                    'SW_DVD9_Win_Server_STD_CORE_2019_1809.18_64Bit_English_DC_STD_MLF_X22-74330.ISO'
+                    'SW_DVD9_Win_Server_STD_CORE_2025_24H2.1_64Bit_English_DC_STD_MLF_X23-89914.ISO'
                 )
                 foreach ($filename in $filenames) {
                     if (-not (Test-Path (Join-Path $folder $filename))) {
                         Start-BitsTransfer `
-                            -Source "https://exdoisofiles.blob.core.windows.net/files/$filename" `
+                            -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" `
                             -Destination $folder    
                     }
                 }
@@ -373,6 +374,26 @@ Configuration Hypervisor {
                 DependsOn  = '[xVMSwitch]ExternalSwitch'
             }
 
+            Script InstallDelliDRACTools {
+                SetScript  = {
+                    $uri = 'https://exdosa.blob.core.windows.net/public/dell/Dell-iDRACTools-Web-WINX64-11.3.0.0-609_A00.exe'
+                    $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
+                    $pathAndFilename = Join-Path $env:temp $filename
+                    Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    Start-Process -FilePath "$pathAndFilename" -ArgumentList @("/auto") -Wait -NoNewWindow
+                    Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i", "C:\OpenManage\iDRACTools_x64.msi", "/qb", "/norestart") -Wait -NoNewWindow
+                }
+                TestScript = {
+                    return (Test-Path -Path 'C:\Program Files\Dell\SysMgt\iDRACTools')
+                }
+                GetScript  = {
+                    return @{
+                        Result = (Test-Path -Path 'C:\Program Files\Dell\SysMgt\iDRACTools')
+                    }                
+                }
+                DependsOn  = '[Script]InstallDellOmsa'
+            }
+
             Script SecureOmsaWebServer {
                 SetScript  = {
                     Start-Process -FilePath "C:\Program Files\Dell\SysMgt\oma\bin\omconfig.exe" -ArgumentList @("preferences", "webserver", "attribute=ciphers", "setting=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384") -Wait -NoNewWindow
@@ -397,44 +418,44 @@ Configuration Hypervisor {
 
             Script SetDellRemoteAccessControllerName {
                 SetScript  = {
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV', 'OB')
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.Nic.DNSRacName ($using:ComputerName).Replace('SV', 'OB')
                 }
                 TestScript = {
-                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -match ($using:ComputerName).Replace('SV', 'OB')
+                    return (& 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)[1] -match ($using:ComputerName).Replace('SV', 'OB')
                 }
                 GetScript  = {
                     return @{
-                        Result = (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)
+                        Result = (& 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' get iDRAC.Nic.DNSRacName)
                     }                
                 }
-                DependsOn  = '[Script]InstallDellOmsa'
+                DependsOn  = '[Script]InstallDelliDRACTools'
             }
 
             Script SetDellRemoteAccessControllerNic {
                 SetScript  = {
                     $address = ($using:DellRemoteAccessControllerAddr)
                     $gateway = $address.Substring(0, $address.LastIndexOf(".")) + ".1"
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DHCPEnable 0
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNSFromDHCP 0
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Address $address
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Netmask 255.255.255.0
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Gateway $gateway
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS1 8.8.8.8
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS2 8.8.4.4
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanId 64
-                    & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanEnable 1
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DHCPEnable 0
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNSFromDHCP 0
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Address $address
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Netmask 255.255.255.0
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.Gateway $gateway
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS1 8.8.8.8
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.IPv4.DNS2 8.8.4.4
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanId 64
+                    & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' set iDRAC.Nic.VLanEnable 1
                 }
                 TestScript = {
-                    return (& 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4.DHCPEnable)[1] -eq 'DHCPEnable=Disabled'
+                    return (& 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' get iDRAC.IPv4.DHCPEnable)[1] -eq 'DHCPEnable=Disabled'
                 }
                 GetScript  = {
-                    $result = & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.IPv4
-                    $result += & 'C:\Program Files\Dell\SysMgt\OM_iDRACTools\racadm\racadm.exe' get iDRAC.Nic
+                    $result = & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' get iDRAC.IPv4
+                    $result += & 'C:\Program Files\Dell\SysMgt\iDRACTools\racadm\racadm.exe' get iDRAC.Nic
                     return @{
                         Result = $result
                     }                
                 }
-                DependsOn  = '[Script]InstallDellOmsa'
+                DependsOn  = '[Script]InstallDelliDRACTools'
             }
         }
 
@@ -481,7 +502,7 @@ function Select-DellRemoteAccessControllerAddr {
 
 function Select-DellOmsaManagedNodeUri {
     Write-Host "Dell EMC OpenManage Server Administrator Managed Node for Windows can be located on Dell support site"
-    Write-Host "Latest is https://dl.dell.com/FOLDER10664637M/1/OM-SrvAdmin-Dell-Web-WINX64-11.0.0.0-5488_A00.exe"
+    Write-Host "Latest is https://exdosa.blob.core.windows.net/public/dell/OM-SrvAdmin-Dell-Web-WINX64-11.1.0.0-5758_A01.exe"
     Write-Host "Leave blank if not working with a Dell server"
     Read-Host  "Type or paste URL"
 }
