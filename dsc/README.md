@@ -29,7 +29,7 @@ iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ## Scenario-specific scripts
 
-### Provisioning a new Dell Hypervisor with Windows Server 2022 Standard
+### Provisioning a new Dell Hypervisor with Windows Server 2025 Standard
 
 ```
 iex ((new-object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/exceedio/powershell/master/dsc/Deploy-Hypervisor.ps1'))
@@ -50,6 +50,7 @@ This script does the following:
 - Removes the Windows default Hyper-V path (C:\Users\Public\Documents\Hyper-V)
 - Creates a Hyper-V external virtual switch using the specific NICs
 - Installs Dell OpenManage Server Administrator (OMSA) Managed Node and secures its web server
+- Installs Dell iDRAC Tools for Microsoft Windows Server
 - Configures the iDRAC address and DNS name
 - Downloads installation media ISO files to C:\Users\Public\Documents\ISO
 
