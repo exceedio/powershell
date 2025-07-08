@@ -1,0 +1,68 @@
+$schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
+resources:
+- name: DisableServerManager
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKLM\SOFTWARE\Microsoft\ServerManager
+    valueName: DoNotOpenServerManagerAtLogon
+    valueData:
+      DWord: 1
+- name: DisablePrinterMapping
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services
+    valueName: fDisableCpm
+    valueData:
+      DWord: 1
+- name: DisableEdgePasswordManager
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKLM\SOFTWARE\Policies\Microsoft\Edge
+    valueName: PasswordManagerEnabled
+    valueData:
+      DWord: 0
+- name: DisableEdgeFirstRunExperience
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKLM\SOFTWARE\Policies\Microsoft\Edge
+    valueName: HideFirstRunExperience
+    valueData:
+      DWord: 1
+- name: EnableFeatures
+  type: Microsoft.Windows/WindowsPowerShell
+  properties:
+    resources:
+    - name: InstallHyperV
+      type: PSDesiredStateConfiguration/WindowsFeature
+      properties:
+        Name: Hyper-V
+        Ensure: Present
+    - name: InstallHyperVTools
+      type: PSDesiredStateConfiguration/WindowsFeature
+      properties:
+        Name: Hyper-V-Tools
+        Ensure: Present
+    - name: InstallHyperVPowerShell
+      type: PSDesiredStateConfiguration/WindowsFeature
+      properties:
+        Name: Hyper-V-PowerShell
+        Ensure: Present
+    - name: InstallSnmpFeature
+      type: PSDesiredStateConfiguration/WindowsFeature
+      properties:
+        Name: SNMP-Service
+        Ensure: Present
+    - name: StartSnmpFeature
+      type: PSDesiredStateConfiguration/Service
+      dependsOn:
+        - "[resourceId('PSDesiredStateConfiguration/WindowsFeature', 'InstallSnmpFeature')]"
+      properties:
+        Name: SNMP
+        StartupType: Automatic
+        State: Running
+    - name: EnableRDP
+      type: ComputerManagementDsc/RemoteDesktopAdmin
+      properties:
+        IsSingleInstance: Yes
+        Ensure: Present
+        UserAuthentication: Secure
