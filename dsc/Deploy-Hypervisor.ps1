@@ -87,7 +87,7 @@ Configuration Hypervisor {
         }
 
         Registry DisableEdgePasswordManager {
-            Key       = 'HKLM:\SOFTWARE\Policies\SOFTWARE\Policies\Microsoft\Edge'
+            Key       = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
             Ensure    = 'Present'
             ValueName = 'PasswordManagerEnabled'
             ValueType = 'DWord'
