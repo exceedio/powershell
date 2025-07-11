@@ -305,9 +305,12 @@ Configuration Hypervisor {
                 )
                 foreach ($filename in $filenames) {
                     if (-not (Test-Path (Join-Path $folder $filename))) {
-                        Start-BitsTransfer `
-                            -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" `
-                            -Destination $folder    
+                        #Start-BitsTransfer `
+                        #    -Source "https://exdosa.blob.core.windows.net/public/iso/$filename" `
+                        #    -Destination $folder
+                        Invoke-RestMethod `
+                            -Uri "https://exdosa.blob.core.windows.net/public/iso/$filename" `
+                            -OutFile Join-Path $folder $filename
                     }
                 }
             }
@@ -323,9 +326,12 @@ Configuration Hypervisor {
 
         Script BenchmarkStorageSpeed {
             SetScript  = {
-                Start-BitsTransfer `
-                    -Source 'https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP' `
-                    -Destination 'C:\Users\Public\Documents\DiskSpd.ZIP'
+                #Start-BitsTransfer `
+                #    -Source 'https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP' `
+                #    -Destination 'C:\Users\Public\Documents\DiskSpd.ZIP'
+                Invoke-RestMethod `
+                    -Uri 'https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP' `
+                    -OutFile 'C:\Users\Public\Documents\DiskSpd.ZIP'
                 Expand-Archive `
                     -Path 'C:\Users\Public\Documents\DiskSpd.ZIP' `
                     -DestinationPath 'C:\Users\Public\Documents\DiskSpd' `
@@ -359,7 +365,8 @@ Configuration Hypervisor {
                     $uri = $using:DellOmsaManagedNodeUri
                     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
                     $pathAndFilename = Join-Path $env:temp $filename
-                    Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    #Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    Invoke-RestMethod -Uri $uri -OutFile $pathAndFilename
                     Start-Process -FilePath "$pathAndFilename" -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i", "C:\OpenManage\windows\SystemsManagementx64\SysMgmtx64.msi", "/qb", "/norestart") -Wait -NoNewWindow
                 }
@@ -379,7 +386,8 @@ Configuration Hypervisor {
                     $uri = 'https://exdosa.blob.core.windows.net/public/dell/Dell-iDRACTools-Web-WINX64-11.3.0.0-609_A00.exe'
                     $filename = $uri.Substring($uri.LastIndexOf("/") + 1)
                     $pathAndFilename = Join-Path $env:temp $filename
-                    Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    #Start-BitsTransfer -Source $uri -Destination $pathAndFilename
+                    Invoke-RestMethod -Uri $uri -OutFile $pathAndFilename
                     Start-Process -FilePath "$pathAndFilename" -ArgumentList @("/auto") -Wait -NoNewWindow
                     Start-Process -FilePath "msiexec.exe" -ArgumentList @("/i", "C:\OpenManage\iDRACTools_x64.msi", "/qb", "/norestart") -Wait -NoNewWindow
                 }
